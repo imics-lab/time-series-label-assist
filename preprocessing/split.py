@@ -71,7 +71,7 @@ class TimeSeriesNP():
             le = LabelEncoder()
             integer_encoded = le.fit_transform(labels)
             init_mapping = dict(zip(le.classes_, range(len(le.classes_))))
-            self.mapping = inv_map = {v: k for k, v in init_mapping.items()}
+            self.mapping = {init_mapping[k] : k for k in init_mapping}
             
             if (one_hot_encode):
                 name_mapping = dict(zip(le.classes_, le.transform(le.classes_)))
