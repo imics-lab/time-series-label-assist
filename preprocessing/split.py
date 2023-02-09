@@ -17,32 +17,42 @@ class TimeSeriesNP():
         self.time_steps = time_steps
 
     def timeSlice(self, df):
-        N_FEATURES = len(df.columns) - 2 #subtract 2 for labels and subject columns
+
+        #I am doing it this way because in the future the user should be able to 
+        #enter a data set that does not contain subject and label columns without
+        #breaking the functionality
+        N_FEATURES = len(df.columns)
+        not_features = 0
+        if 'label' in df.columns:
+            not_features+=1
+        if 'sub' in df.columns:
+            not_features+=1
+        N_FEATURES-= not_features  
+
+        #subtract 2 for labels and subject columns
         #use seperate arrays for each set of values
         segments = []
         labels = []
         subject = []
         times = []
         steps = 0
-        relevantColumns = df.columns[:-2]
+        relevantColumns = df.columns[:-not_features]
 
         #step through the data set and only take 
         for i in range(0, len(df) - self.time_steps, self.step):
             df_segX = df[relevantColumns].iloc[i: i + self.time_steps]
             df_lbl = df['label'].iloc[i: i + self.time_steps]
             df_sub = df['sub'].iloc[i: i + self.time_steps]
+            
             # Save only if labels are the same for the entire segment and valid
             if (df_lbl.value_counts().iloc[0] != self.time_steps):
                 continue
             if 'Undefined' in df_lbl.values :
                 continue
-            if (df_sub.value_counts().iloc[0] != self.time_steps):
-                print('Segment at','contains multiple subjects.  Discarding.')
-                continue
-            
-            segments.append(df_segX.to_numpy())
-            labels.append(df['label'].iloc[i])
+
             subject.append(df['sub'].iloc[i])
+            labels.append(df['label'].iloc[i]) 
+            segments.append(df_segX.to_numpy())   
             times.append([df.index[i], df.index[i + self.time_steps]])
                 
 
@@ -70,11 +80,9 @@ class TimeSeriesNP():
             y_vector = np.ravel(self.y) #encoder won't take column vector
             le = LabelEncoder()
             integer_encoded = le.fit_transform(labels)
-            init_mapping = dict(zip(le.classes_, range(len(le.classes_))))
-            self.mapping = {init_mapping[k] : k for k in init_mapping}
+            self.mapping = dict(zip(range(len(le.classes_)), le.classes_))
             
             if (one_hot_encode):
-                name_mapping = dict(zip(le.classes_, le.transform(le.classes_)))
                 onehot_encoder = OneHotEncoder(sparse=False)
                 integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
                 onehot_encoded = onehot_encoder.fit_transform(integer_encoded)
@@ -101,9 +109,6 @@ class TimeSeriesNP():
         self.sub = np.delete(self.sub, (0), axis=0)
         self.sub = sub.astype(int) # convert from float to int
     
-    
-    #need to figure out a potentially more accesible way to pass in the name and indexes
-    #of the training and test subjectsabs
 
     """
     use a dictionary to pass in the splitting of the subjects.

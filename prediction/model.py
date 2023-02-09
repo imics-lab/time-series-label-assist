@@ -60,6 +60,7 @@ class CNN():
         self.model = model
 
     def build(self, num_filters = 100, k1_size=17, k2_size=17, dropout = 0.5, mpool_size = 2):
+        #need to grab output of dense layer before softmax
         self.model = keras.Sequential(
             [
                 layers.Input(shape=self.x_train[0].shape),
