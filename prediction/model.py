@@ -60,7 +60,6 @@ class CNN():
         self.model = model
 
     def build(self, num_filters = 100, k1_size=17, k2_size=17, dropout = 0.5, mpool_size = 2):
-        #need to grab output of dense layer before softmax
         self.model = keras.Sequential(
             [
                 layers.Input(shape=self.x_train[0].shape),
@@ -80,7 +79,7 @@ class CNN():
         # increasing dropout to 0.8 and higher requires more than 100 epochs
         # see https://www.tensorflow.org/api_docs/python/tf/keras/callbacks/EarlyStopping
         callback = EarlyStopping(monitor='val_loss', mode = 'min', patience=20)
-        self.model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+        self.model.compile(loss="sparse_categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
         if self.validation:
             self.history = self.model.fit(
             self.x_train, self.y_train,
