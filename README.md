@@ -24,8 +24,8 @@ A Python-based labeling tool that uses self-supervised learning and visualizatio
 ### Pipeline of Application
 <img width="996" alt="image" src="https://user-images.githubusercontent.com/108648654/229269330-87851963-0b7e-4631-a535-61dc92a12858.png">
 
-### Uploading files/video
-  -For data, we use upload widgets to select a data file (our .csv in the format described above in the preprocessing step) and a label list (which is also a .csv, but of all possible labels for the dataset).
+### Uploading Files/Video
+  - For data, we use upload widgets to select a data file (our .csv in the format described above in the preprocessing step) and a label list (which is also a .csv, but of all possible labels for the dataset).
   - For video, we have two options, we can upload a video file directly to the Colab session, similar to the data upload (takes a long time if video is not short). Or, we can specify a Google Drive link to the video file.
 	- The Google Drive option is better, because the user only needs to upload the video file once to their Google Drive, then they can use that link to repeatedly use the application.
 
@@ -45,7 +45,7 @@ A Python-based labeling tool that uses self-supervised learning and visualizatio
 
 
 ### Label Correction
-  -This interface is our biggest, and combines features of all the previous interfaces. We load the unlabeled uploaded data we have generated predictions for. We display the video associated (if we have it), the raw time series of the data, and the UMAP. Alongside these representations of the data, we have all the same functionality as previously talked about.
+  - This interface is our biggest, and combines features of all the previous interfaces. We load the unlabeled uploaded data we have generated predictions for. We display the video associated (if we have it), the raw time series of the data, and the UMAP. Alongside these representations of the data, we have all the same functionality as previously talked about.
   - The user will specify a confidence threshold in a UI before this cell is run. If the confidence of the model's prediction is below this threshold, there will be a flag on the raw time series for the user to review in this stage. The user will utilize all these representations to correct the flagged labels.
 
 
@@ -53,5 +53,5 @@ A Python-based labeling tool that uses self-supervised learning and visualizatio
   - Following the label correction process, we need to integrate the newly labeled data into the model to enhance its predictive capabilities.
 
 ### Eventually Leave App with Newly Labeled Data
-  - save labeled data
+  - Save labeled data.
 
