@@ -3,7 +3,8 @@ A Python-based labeling tool that uses self-supervised learning and visualizatio
 
 ### Preprocessing
   - Application takes in .csv data where the first column is time series data (currently limited to needing the name “datetime”). Following the time series data column, we have sensor data columns, we want a label and subject column, either in the original data, or we add these columns.
-  
+<img width="996" alt="image" src="https://github.com/imics-lab/time-series-label-assist/blob/945a3e607655307ed814eae480ff10298b34dd4c/documentation/images/upload_file_format.jpg">
+
 ### Accessing application "Open Google Colab notebook"
   - We can open the notebook in Google Colab through GitHub
     1) File -> Open Notebook in Colab
