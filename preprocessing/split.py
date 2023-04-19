@@ -44,11 +44,11 @@ class TimeSeriesNP():
             df_lbl = df['label'].iloc[i: i + self.time_steps]
             df_sub = df['sub'].iloc[i: i + self.time_steps]
             
-            # Save only if labels are the same for the entire segment and valid
-            if (df_lbl.value_counts().iloc[0] != self.time_steps):
-                continue
-            if 'Undefined' in df_lbl.values :
-                continue
+            ## Save only if labels are the same for the entire segment and valid
+            #if (df_lbl.value_counts().iloc[0] != self.time_steps):
+            #    continue
+            #if 'Undefined' in df_lbl.values :
+            #    continue
 
             subject.append(df['sub'].iloc[i])
             labels.append(df['label'].iloc[i]) 
