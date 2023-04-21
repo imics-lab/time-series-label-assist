@@ -86,6 +86,7 @@ class TimeSeriesNP():
             le = LabelEncoder()
 
             le.fit(labels)
+            le.classes_ = labels
             self.mapping = dict(zip(range(len(le.classes_)), le.classes_))
 
             integer_encoded = le.fit_transform(y_vector)
