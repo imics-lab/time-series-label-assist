@@ -78,7 +78,7 @@ class TimeSeriesNP():
         #encode using integer or one-hot endcoding
         if encode:
             y_vector = np.ravel(self.y) #encoder won't take column vector
-            print(y_vector)
+            #print(y_vector)
             le = LabelEncoder()
 
             labels_array = np.array(labels)  # Convert labels list to a NumPy array
