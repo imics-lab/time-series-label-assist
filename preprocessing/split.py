@@ -77,10 +77,18 @@ class TimeSeriesNP():
 
         #encode using integer or one-hot endcoding
         if encode:
+            # y_vector = np.ravel(self.y) #encoder won't take column vector
+            # le = LabelEncoder()
+            # integer_encoded = le.fit_transform(labels)
+            # le.classes_ = labels # added for mapping issue
+            # self.mapping = dict(zip(range(len(le.classes_)), le.classes_))
             y_vector = np.ravel(self.y) #encoder won't take column vector
             le = LabelEncoder()
-            integer_encoded = le.fit_transform(y_vector)
+
+            le.fit(labels)
             self.mapping = dict(zip(range(len(le.classes_)), le.classes_))
+
+            integer_encoded = le.fit_transform(y_vector)
             
             if (one_hot_encode):
                 onehot_encoder = OneHotEncoder(sparse=False)
@@ -88,7 +96,7 @@ class TimeSeriesNP():
                 onehot_encoded = onehot_encoder.fit_transform(integer_encoded)
                 self.y=onehot_encoded
             else:
-                self.y = le.transform(self.y)
+                self.y = integer_encoded
     
 
     def updateArrays(self, df):
