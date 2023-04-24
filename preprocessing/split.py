@@ -47,7 +47,13 @@ class TimeSeriesNP():
             ## Save only if labels are the same for the entire segment and valid
             #if (df_lbl.value_counts().iloc[0] != self.time_steps):
             #    continue
-            if 'Undefined' in df_lbl.values :
+            
+            # if the uploaded data is all undefined, we do not throw out undefined labels
+            if all(df_lbl.values == 'Undefined'):
+              pass
+            else:
+              # if there are some labels, we throughout undefined labels to not show in umap
+              if 'Undefined' in df_lbl.values :
                 continue
 
             subject.append(df['sub'].iloc[i])
