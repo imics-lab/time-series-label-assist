@@ -48,9 +48,13 @@ class TimeSeriesNP():
             #if (df_lbl.value_counts().iloc[0] != self.time_steps):
             #    continue
             
-            # if there are some labels, we throughout undefined labels to not show in umap
-            if 'Undefined' in df_lbl.values :
-                continue
+            # Check if all values in 'df_lbl' are 'Undefined'
+            if (df_lbl.values == 'Undefined').all():
+                pass
+            else:
+              # throw out undefined if all are not labeled as undefined
+              if 'Undefined' in df_lbl.values:
+                  continue
 
             subject.append(df['sub'].iloc[i])
             labels.append(df['label'].iloc[i]) 
