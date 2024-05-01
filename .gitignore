@@ -1,3 +1,13 @@
+*.mp4
+
+assets/
+
+__pycache__
+
+zips/
+
+data/brownie_imu_data/S07_Brownie/*.txt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
