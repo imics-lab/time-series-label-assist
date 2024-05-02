@@ -8,7 +8,7 @@ from sklearn.metrics import accuracy_score
 import numpy as np
 import sys
 sys.path.append('..')
-from tyler_code import split # update to whatever directory split.py is in
+from prediction import split # update to whatever directory split.py is in
 
 #class only works
 class CNN():

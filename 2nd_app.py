@@ -31,7 +31,7 @@ from dash import callback_context
 from IPython.display import display
 import ipywidgets as widgets
 
-from tyler_code import split, model
+from prediction import split, model
 
 working_dir = os.getcwd()
 
