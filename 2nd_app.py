@@ -457,6 +457,23 @@ def create_time_series_figure(valid_features, cols, df, additional_shapes=None):
                 yshift=3  # Shift up by 5 units to keep the text inside the plot area
             )
 
+    # Add dummy scatter traces for legend entries
+    unique_labels = df['label'].dropna().unique()
+    for label in unique_labels:
+        color = colorDict.get(label, '#000000')  # Get color from color dictionary
+        fig.add_trace(go.Scatter(
+            x=[None],  # No actual data points
+            y=[None],
+            mode='markers',
+            marker=dict(
+                color=color,
+                symbol='square',  # Use 'square' to represent the marker as a square
+                size=10,  # Adjust size to make it visible and appropriately sized in the legend
+                opacity=0.5
+            ),
+            name=label
+        ))
+
     if additional_shapes:
         for shape in additional_shapes:
             fig.add_shape(shape)
@@ -649,34 +666,6 @@ def layout():
             color_discrete_map=color_discrete_map,
             custom_data=['index']
         ).update_layout(autosize=False, xaxis_title=None, yaxis_title=None, legend_title_text="Class", xaxis=dict(scaleanchor='y', scaleratio=1), yaxis=dict(scaleanchor='x',scaleratio=1,))
-
-    # def rerender_umap(n_neighbors_value, min_dist_value):
-    #     global embedding_df, umap_to_ts_mapping, predicted_labels
-    #     reducer = umap.UMAP(n_neighbors=n_neighbors_value, n_components=2, min_dist=min_dist_value)
-    #     embedding = reducer.fit_transform(predictions)
-
-    #     embedding_df = pd.DataFrame(embedding, columns=['x', 'y'])
-    #     embedding_df['index'] = np.arange(len(embedding))
-
-    #     umap_to_ts_mapping = {umap_index: (window_start, window_end) for umap_index, (window_start, window_end) in enumerate(windows)}
-
-    #     # Step 2: Assuming `predictions` are the output of your CNN model
-    #     predicted_class_indices = np.argmax(predictions, axis=1)
-
-    #     # Step 3: Convert numeric codes back to labels
-    #     predicted_labels = np.array([num_to_label_dict[code] for code in predicted_class_indices])
-
-    #     # Step 4: Create a mapping from windows to original data indices
-    #     for umap_index, label in zip(embedding_df['index'], predicted_labels):
-    #         window_start, window_end = umap_to_ts_mapping[umap_index]
-            
-    #         # Find rows where the 'datetime' column is within the window range
-    #         mask = (df['temp_datetime'] >= window_start) & (df['temp_datetime'] <= window_end)
-            
-    #         # Assign the label to these rows
-    #         df.loc[mask, 'PredictedLabel'] = label
-
-    #     embedding_df['window_start'] = embedding_df['index'].apply(lambda idx: umap_to_ts_mapping[idx][0] if idx in umap_to_ts_mapping else None) # get times for each umap point
 
     def highlight_umap_point(umap_fig, selected_index, nearest_overall_index, nearest_same_type_index):
         # Define marker styles based on the source
@@ -1030,6 +1019,12 @@ def layout():
                 raise PreventUpdate 
             if clickData is not None:
                 clicked_datetime = pd.to_datetime(clickData['points'][0]['x'])
+                npInput_labels_updated = np.array([num_to_label_dict[code] for code in npInput])
+                color_discrete_map_updated = {label: base_color_map.get(label, '#000000') for label in np.unique(npInput_labels_updated)}
+                umap_fig = px.scatter(
+                    embedding_df, x='x', y='y', color=npInput_labels_updated, hover_name=npInput_labels_updated,
+                    color_discrete_map=color_discrete_map_updated, custom_data=['index']
+                ).update_layout(autosize=False, xaxis_title=None, yaxis_title=None, legend_title_text="Class")
                 umap_point_index = find_umap_point_from_ts(clicked_datetime, windows)
                 nearest_overall_index, nearest_same_type_index = nearestNeighbor(embedding, umap_point_index, npInput)
             else:
@@ -1070,6 +1065,12 @@ def layout():
         # click on umap
         if triggered == 'umap-graph':
             umap_fig = clear_highlights(umap_fig, "umap")
+            npInput_labels_updated = np.array([num_to_label_dict[code] for code in npInput])
+            color_discrete_map_updated = {label: base_color_map.get(label, '#000000') for label in np.unique(npInput_labels_updated)}
+            umap_fig = px.scatter(
+                embedding_df, x='x', y='y', color=npInput_labels_updated, hover_name=npInput_labels_updated,
+                color_discrete_map=color_discrete_map_updated, custom_data=['index']
+            ).update_layout(autosize=False, xaxis_title=None, yaxis_title=None, legend_title_text="Class")
             #plot_fig = clear_highlights(plot_fig, "ts")
             # ensure flagged labels are still shown
             update_umap_plot_with_flags(embedding_df, umap_fig)
