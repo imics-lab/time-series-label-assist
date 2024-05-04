@@ -621,4 +621,4 @@ def combined_callback(btn_manual_label, btn_sync_vid, relayoutData, fill_ui_valu
 # run app in jupyter mode externally
 # Run the app
 if __name__ == '__main__':
-    app.run_server(debug=True, port=8505, jupyter_mode="external")
+    app.run_server(debug=True, port=8506, jupyter_mode="external")

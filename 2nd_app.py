@@ -149,9 +149,7 @@ color_discrete_map = {label: base_color_map.get(label, '#000000') for label in n
 testModel.only_test_data(new_np.x, new_np.y)
 predictions = testModel.model.predict(new_np.x, verbose=0, batch_size = 32)
 
-def rerender_umap_and_update_df(predictions, df, windows, num_to_label_dict, base_color_map, n_neighbors_value=15, min_dist_value=0.1):
-    global embedding_df, umap_to_ts_mapping, predicted_labels, npInput
-    
+def rerender_umap_and_update_df(predictions, df, windows, num_to_label_dict, base_color_map, n_neighbors_value=15, min_dist_value=0.1):    
     npInput = np.argmax(predictions, axis=1)
 
     # Recreate the UMAP reducer and transform new predictions
@@ -504,124 +502,111 @@ update_umap_plot_with_flags(embedding_df, plotly_umap)
 def layout():
     external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
     umap_app = dash.Dash(__name__,external_stylesheets=external_stylesheets)
-    umap_app.title = 'UMAP'
+    umap_app.title = 'Correct Auto Labeled Data'
     
     umap_app.layout = html.Div([
-        html.H1("UMAP"),
-        dcc.Graph(
-            id='umap-graph',
-            figure=plotly_umap
-        ),
+        html.H1("Correct Auto Labeled Data"),
         html.Div([
-            dcc.Markdown("""
-                **Adjust Parameters for UMAP:**
-            """),
-        ]),     
-        html.Div([
+            # Section for UMAP parameters
             html.Div([
-                html.Label('Number of Neighbors:', style={'font-weight': 'bold'}),
-                dcc.Input(
-                    id='n_neighbors_input',
-                    type='number',
-                    value=15,  # Default starting value
-                    min=2,  # UMAP's n_neighbors must be greater than 1
-                ),
-            ], style={'margin-bottom': '20px'}),
+                dcc.Markdown("**Adjust Parameters for UMAP:**"),
+                html.Div([
+                    html.Div([
+                        html.Label('Number of Neighbors:', style={'font-weight': 'bold'}),
+                        dcc.Input(
+                            id='n_neighbors_input',
+                            type='number',
+                            value=15,
+                            min=2,
+                        ),
+                    ], style={'flex': '1', 'margin-right': '10px'}),  # Third of the space
+                    html.Div([
+                        html.Label('Minimum Distance:', style={'font-weight': 'bold'}),
+                        dcc.Slider(
+                            id='min_dist_slider',
+                            min=0.01,
+                            max=0.99,
+                            step=0.01,
+                            value=0.1,
+                            marks={i / 100: '{:.1f}'.format(i / 100) for i in range(10, 90, 10)},
+                            tooltip={"placement": "bottom", "always_visible": True}
+                        ),
+                    ], style={'flex': '1', 'margin-right': '10px', 'margin-left': '10px'}),  # Third of the space
+                    html.Div([
+                        html.Label('Confidence Threshold:', style={'font-weight': 'bold'}),
+                        dcc.Slider(
+                            id='confidence_threshold_slider',
+                            min=0.01,
+                            max=0.99,
+                            step=0.01,
+                            value=conf_thresh,
+                            marks={i / 100: '{:.2f}'.format(i / 100) for i in range(0, 101, 10)},
+                            tooltip={"placement": "bottom", "always_visible": True}
+                        ),
+                    ], style={'flex': '1', 'margin-left': '10px'}),  # Third of the space
+                ], style={'display': 'flex', 'margin-bottom': '20px'}),
+                html.Button('Update UMAP', id='submit_button', n_clicks=0, style={'width': '25%'}),
+            ], style={'padding': '20px'}),
             
+            # Section for UMAP graph and label changing interface
             html.Div([
-                html.Label('Minimum Distance:', style={'font-weight': 'bold'}),
-                dcc.Slider(
-                    id='min_dist_slider',
-                    min=0.01,  # Minimum value of the slider
-                    max=0.99, # Maximum value of the slider
-                    step=0.01, # Increment step
-                    value=0.1, # Default starting value
-                    marks={
-                        0.01: '0.01',
-                        **{i / 100: '{:.1f}'.format(i / 100) for i in range(10, 90, 10)},
-                        0.9: '0.9',
-                        0.99: '0.99'
-                    },
-                    tooltip={"placement": "bottom", "always_visible": True}
-                ),
-            ], style={'margin-bottom': '20px', 'width': '50%'}),
-            html.Div([
-                html.Label('Confidence Threshold:', style={'font-weight': 'bold'}),
-                dcc.Slider(id='confidence_threshold_slider', min=0.01, max=0.99, step=0.01, value=conf_thresh,
-                           marks={i / 100: '{:.2f}'.format(i / 100) for i in range(0, 101, 10)},
-                           tooltip={"placement": "bottom", "always_visible": True}),
-            ], style={'margin-bottom': '20px', 'width': '50%'}), 
-            dcc.Store(id='previous_conf_thresh', data=conf_thresh),   
-            html.Button('Update UMAP', id='submit_button', n_clicks=0),
-        ]),
-        html.Br(),
-        html.Div([
-            dcc.Markdown("""
-                **Change Label**
-
-                Click on markers in the graph to adjust label.
-            """),
-        ]),        
-        html.Div([
-        html.Div([
-            html.Div([
-                dcc.Dropdown(labelList, '', id='dropdown')
-            ], className="three columns"),
-
-            html.Div([
-                html.Button('Add Label', id='button', n_clicks=0)
-            ], className= "three columns"),
-        ], className="row")
-            
-        ]),
+                html.Label('UMAP', style={'font-weight': 'bold'}),
+                dcc.Graph(id='umap-graph', figure=plotly_umap, style={'flex': '6'}),  # Adjusted for 80% width
+                html.Div([
+                    dcc.Markdown("**Change Label**"),
+                    dcc.Dropdown(labelList, '', id='dropdown'),
+                    html.Button('Add Label', id='button', n_clicks=0)
+                ], style={'flex': '1', 'padding': '0px'}),  # Adjusted for 20% width
+            ], style={'display': 'flex', 'flexDirection': 'row'}),
+        ], style={'display': 'flex', 'flexDirection': 'column'}),
+        html.Hr(),
 ################################################################################################################################################################
         html.Br(),
         html.Div([
+            html.Label('Time-Series Plot Controls', style={'font-weight': 'bold'}),
+            html.Br(),
+            html.Div([
+                html.Div([
+                    html.Label("Start Time:", style={'font-weight': 'bold'}),
+                    dcc.Input(id='ts-start-input', type='text', placeholder="YYYY-MM-DD HH:MM:SS"),
+                    html.Div(id='start-output')
+                ], style={'flex': '1'}),
+                html.Div([
+                    html.Label("End Time:", style={'font-weight': 'bold'}),
+                    dcc.Input(id='ts-end-input', type='text', placeholder="YYYY-MM-DD HH:MM:SS"),
+                    html.Div(id='end-output')
+                ], style={'flex': '1'}),
+                html.Div([
+                    html.Label("Change Label:", style={'font-weight': 'bold'}),
+                    dcc.Dropdown(labelList, placeholder='Select a Label', id='ts-label-selection'),
+                    html.Div(id='label-output')
+                ], style={'flex': '1'}),
+                html.Div([
+                    html.Label("Degree of Confidence:", style={'font-weight': 'bold'}),
+                    dcc.Dropdown(["High", "Medium", "Low", "Undefined"], placeholder='Select a Confidence Level', id='ts-confidence-selection'),
+                    html.Div(id='confidence-output')
+                ], style={'flex': '1'}),
+            ], style={'display': 'flex', 'flexDirection': 'row', 'alignItems': 'center', 'margin-bottom': '10px'}),
             dcc.Checklist(
                 id='ts-fill-ui-checkbox',
-                options=[
-                    {'label': 'Fill UI with selected range', 'value': 'fill-ui'},
-                ],
+                options=[{'label': 'Fill Start/End Time with Selected Range', 'value': 'fill-ui'}],
                 value=[],
-            )
-        ]),
-        html.Div([
-            "Start Time: ",
-            dcc.Input(id='ts-start-input', type='text', placeholder="YYYY-MM-DD HH:MM:SS"),
-            html.Div(id='start-output'), 
-        ]),
-        html.Br(),
-        html.Div([
-            "End Time: ",
-            dcc.Input(id='ts-end-input', type='text', placeholder="YYYY-MM-DD HH:MM:SS"),
-            html.Div(id='end-output'), 
+                style={'flex': '1'}
+            ),
+            # Add Label button
+            html.Div([
+                html.Button('Add Label', id='btn-manual-label', n_clicks=0, style={'width': '25%'})
+            ], style={'flex': '1'})
         ]),
         html.Br(),
         html.Div([
-            "Labels: ",
-            dcc.Dropdown(labelList, placeholder='Select a Label', id='ts-label-selection'),
-            html.Div(id='label-output')
-        ]),
-        html.Br(),
-        html.Div([
-            "Degree of Confidence: ",
-            dcc.Dropdown(["High", "Medium", "Low", "Undefined"], placeholder='Select a Confidence Level', id='ts-confidence-selection'),
-            html.Div(id='confidence-output')
-        ]),
-        html.Br(),
-        html.Button('Update Graph', id='btn-manual-label', n_clicks=0),
-        html.Br(),
-        html.Div([
-            dcc.Markdown("""
-            **Time-Series Plot**
-
-            """),
+            html.Label('Time-Series Plot', style={'font-weight': 'bold'}),
             dcc.Graph(
                 id='plot-clicked',
                 figure = lineGraph
             ),
         ], ),
-################################################################################################################################################################
+
         html.Br(),
         html.Div([
             html.Div([
@@ -637,7 +622,10 @@ def layout():
             ], className="four columns"),
         ], className="row"),
         dcc.Store(id='store_data', data = None, storage_type='memory'),
+        html.Hr(),
+################################################################################################################################################################
         html.Br(),
+        html.Label('Video', style={'font-weight': 'bold'}),
         html.Div([
             dash_player.DashPlayer(
                 id='umap-video-player',
@@ -647,7 +635,7 @@ def layout():
                 height='400px',
             )
         ]),
-        html.Button('Video Sync', id='vid_sync_button', n_clicks=0, style={'margin-top': '20px'}),
+        html.Button('Sync to Other Visualizations', id='vid_sync_button', n_clicks=0, style={'margin-top': '20px'}),
         html.H5(children='''Sync Video to RAW TS EXACT:'''),
         html.Div(children='''Plot line on data graph at current time in video.'''),
         html.Button("Sync", id="ts-sync-vid", n_clicks=0),
@@ -657,16 +645,14 @@ def layout():
     ###########################################################################################
 
     def create_umap_figure(embedding_df, npInput_labels):
-        return px.scatter(
-            embedding_df, 
-            x='x', 
-            y='y', 
-            color=npInput_labels,
-            hover_name=npInput_labels,
-            color_discrete_map=color_discrete_map,
-            custom_data=['index']
-        ).update_layout(autosize=False, xaxis_title=None, yaxis_title=None, legend_title_text="Class", xaxis=dict(scaleanchor='y', scaleratio=1), yaxis=dict(scaleanchor='x',scaleratio=1,))
-
+        npInput_labels = np.array([num_to_label_dict[code] for code in npInput])
+        color_discrete_map = {label: base_color_map.get(label, '#000000') for label in np.unique(npInput_labels)}
+        umap_fig = px.scatter(
+            embedding_df, x='x', y='y', color=npInput_labels, hover_name=npInput_labels,
+            color_discrete_map=color_discrete_map, custom_data=['index']
+        ).update_layout(autosize=False, xaxis_title=None, yaxis_title=None, legend_title_text="Class")
+        return umap_fig
+    
     def highlight_umap_point(umap_fig, selected_index, nearest_overall_index, nearest_same_type_index):
         # Define marker styles based on the source
         selected_marker = {
@@ -814,7 +800,7 @@ def layout():
                 xaxis=dict(showgrid=False),
                 yaxis=dict(showgrid=False),
                 annotations=[{
-                    'text': "No distinct same-type neighbor; identical to nearest overall.",
+                    'text': "identical to nearest overall",
                     'xref': "paper",
                     'yref': "paper",
                     'showarrow': False,
@@ -1018,6 +1004,7 @@ def layout():
             else:
                 raise PreventUpdate 
             if clickData is not None:
+                # TO DO: change to call create umap
                 clicked_datetime = pd.to_datetime(clickData['points'][0]['x'])
                 npInput_labels_updated = np.array([num_to_label_dict[code] for code in npInput])
                 color_discrete_map_updated = {label: base_color_map.get(label, '#000000') for label in np.unique(npInput_labels_updated)}
@@ -1075,9 +1062,12 @@ def layout():
             # ensure flagged labels are still shown
             update_umap_plot_with_flags(embedding_df, umap_fig)
             update_timeseries_plot_with_flags(df, plot_fig)
+            embedding_df.to_csv("embedding_df.csv")
 
             # Extract the index of the clicked point in the UMAP plot
             selected_index = umap_clickData["points"][0]["customdata"][0]
+            print(f"UMAP point clicked: {umap_clickData}")
+            print(f"Selected index: {selected_index}, Current Label: {df.loc[selected_index, 'label']}")
             nearest_overall_index, nearest_same_type_index = nearestNeighbor(embedding, selected_index, npInput)
 
             # Use the mapping to find the corresponding time series window
@@ -1104,6 +1094,7 @@ def layout():
         if "button" == ctx.triggered_id:
             selected_index = umap_clickData["points"][0]["customdata"][0] if umap_clickData else None
             modified_indices = update_label(selected_index, value, npInput, npInput_labels, label_num_dict, manual_confidence=True)
+            # TO DO: change to call create umap
             npInput_labels_updated = np.array([num_to_label_dict[code] for code in npInput])
             color_discrete_map_updated = {label: base_color_map.get(label, '#000000') for label in np.unique(npInput_labels_updated)}
             umap_fig = px.scatter(
@@ -1206,5 +1197,5 @@ def layout():
         return None
     
 
-    umap_app.run_server(debug=True, port=8086, jupyter_mode="external")
+    umap_app.run_server(debug=True, port=8081, jupyter_mode="external")
 layout()
