@@ -179,9 +179,9 @@ def rerender_umap_and_update_df(predictions, df, windows, num_to_label_dict, bas
         df.loc[mask, 'PredictedLabel'] = row['label']
         df.loc[mask, 'window_id'] = row['index']
 
-    return embedding_df, embedding, umap_to_ts_mapping
+    return embedding_df, embedding, umap_to_ts_mapping, predicted_labels
 
-embedding_df, embedding, umap_to_ts_mapping = rerender_umap_and_update_df(predictions, df, windows, num_to_label_dict, base_color_map)
+embedding_df, embedding, umap_to_ts_mapping, predicted_labels = rerender_umap_and_update_df(predictions, df, windows, num_to_label_dict, base_color_map)
 
 #################################################################################################################################################
 # confidence stuff (flagging)
@@ -1062,12 +1062,9 @@ def layout():
             # ensure flagged labels are still shown
             update_umap_plot_with_flags(embedding_df, umap_fig)
             update_timeseries_plot_with_flags(df, plot_fig)
-            embedding_df.to_csv("embedding_df.csv")
 
             # Extract the index of the clicked point in the UMAP plot
             selected_index = umap_clickData["points"][0]["customdata"][0]
-            print(f"UMAP point clicked: {umap_clickData}")
-            print(f"Selected index: {selected_index}, Current Label: {df.loc[selected_index, 'label']}")
             nearest_overall_index, nearest_same_type_index = nearestNeighbor(embedding, selected_index, npInput)
 
             # Use the mapping to find the corresponding time series window
@@ -1197,5 +1194,5 @@ def layout():
         return None
     
 
-    umap_app.run_server(debug=True, port=8081, jupyter_mode="external")
+    umap_app.run_server(debug=True, port=8082, jupyter_mode="external")
 layout()
