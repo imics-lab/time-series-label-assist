@@ -15,96 +15,96 @@ import os
 import json
 import glob as glob
 import shutil
-
-# Layout of the Dash application with various components
-layout = html.Div([
-    html.H3('Data Preprocessing'), # Title for the section
-    html.H5('Load CSV Time-Series Data'),
-    dcc.Upload( # Component to upload files
-        id='upload-data',
-        children=html.Button('Load CSV Data', id='load-CSV-data-button'),
-        style={'width': '100%', 'height': '60px', 'lineHeight': '60px', 'borderWidth': '1px', 'borderStyle': 'dashed', 'borderRadius': '5px', 'textAlign': 'center', 'margin': '10px'},
-        multiple=True
-    ), 
-    html.Div(id='output-data-upload', style={'marginBottom': '20px'}), # Increased margin bottom for spacing
-    html.H5('Load CSV Label List'),
-    dcc.Upload(  # Upload component for the label CSV
-        id='upload-labels',
-        children=html.Button('Load Label List', id='load-labels-button'),
-        style={'width': '100%', 'height': '60px', 'lineHeight': '60px', 'borderWidth': '1px', 'borderStyle': 'dashed', 'borderRadius': '5px', 'textAlign': 'center', 'margin': '10px'},
-        multiple=False
-    ),
-    html.Div(id='labels-output', style={'marginBottom': '20px'}),
-    html.H5("Configurations"),
-    dbc.Row([  # Two columns for selecting time and label columns
-        dbc.Col(html.Div([
-            html.Label("Select Time Column:"),
-            dcc.Dropdown(id='time-column-dropdown'),
-        ], style={'marginBottom': '20px'}), width=6), # Added margin bottom
-        dbc.Col(html.Div([
-            html.Label("Select Label Column:"),
-            dcc.Dropdown(id='label-column-dropdown'),
-        ], style={'marginBottom': '20px'}), width=6) # Added margin bottom
-    ]),
-    dbc.Row([  # Row for feature selection and default plot columns with select all functionality
-        dbc.Col([
-            dbc.Row([
-                dbc.Col(html.Label("Select Feature Columns:"), width=8),
-                dbc.Col(dbc.Button("Select All", id="select-all-features", n_clicks=0, className="mr-1"), width=4),
-            ]),
-            dbc.Checklist(  # Checklist to select features
-                options=[],
-                id='feature-columns-checkboxes',
-                inline=True,
-                switch=True,
-                style={'display': 'grid', 'gridTemplateColumns': 'repeat(auto-fill, minmax(120px, 1fr))', 'overflowY': 'auto', 'maxHeight': '200px'}
-            ),
-        ], width=6, style={'marginBottom': '20px'}), # Added margin bottom
-        dbc.Col([
-            dbc.Row([
-                dbc.Col(html.Label("Select Features to Plot by Default:"), width=8),
-                dbc.Col(dbc.Button("Select All", id="select-all-plots", n_clicks=0, className="mr-1"), width=4),
-            ]),
-            dbc.Checklist( # Checklist to select default plot columns
-                options=[],
-                id='plot-columns-checkboxes',
-                inline=True,
-                switch=True,
-                style={'display': 'grid', 'gridTemplateColumns': 'repeat(auto-fill, minmax(120px, 1fr))', 'overflowY': 'auto', 'maxHeight': '200px'}
-            )
-        ], width=6, style={'marginBottom': '20px'}) # Added margin bottom
-    ]),
-    html.H5("Load Video Data", style={'marginBottom': '20px'}),
-    dcc.Upload(
-        id='upload-video',
-        children=html.Button('Load Video', id='load-video-button'),
-        style={'width': '100%', 'height': '60px', 'lineHeight': '60px', 'borderWidth': '1px', 'borderStyle': 'dashed', 'borderRadius': '5px', 'textAlign': 'center', 'margin': '10px', 'marginBottom': '20px'},
-        multiple=False  # Assuming only one video file is needed at a time
-    ),
-    html.H5("Video", style={'marginBottom': '20px'}),
-    # Initialize DashPlayer directly in the layout
-    dash_player.DashPlayer(
-        id='video-player',
-        controls=True,
-        playing=False,
-        width='100%',
-        height='400px',
-        url="init",  # Initial empty URL or placeholder video URL
-        style={'marginBottom': '20px'},
-    ), 
-    html.H5("Video Data Sync Offset", style={'marginBottom': '10px'}),
-    html.Div([
-        html.P([html.Strong("Zero Offset:"), " Sync Start - Video and data begin together."]),
-        html.P([html.Strong("Positive Offset:"), " Video Delay - Start video [offset] seconds after data."]),
-        html.P([html.Strong("Negative Offset:"), " Data Delay - Start data [offset] seconds after video."]),
-        dbc.Input(id='video-data-offset', type='number', placeholder="Enter offset in seconds...", step=1, style={'marginBottom': '10px'}),
-    ], style={'marginBottom': '20px'}),
-    dbc.Button("Save Configuration", id='save-config-button', className="mb-3", style={'marginTop': '20px', 'marginBottom': '20px'}),
-    html.Div(id='config-save-status', style={'marginTop': '20px'}),
-    dcc.Store(id='stored-manual-df'),
-    dcc.Store(id='video-data'),
-    dcc.Store(id='stored-labels')
-])
+def layout():
+    layout = html.Div([
+        html.H3('Data Preprocessing'), # Title for the section
+        html.H5('Load CSV Time-Series Data'),
+        dcc.Upload( # Component to upload files
+            id='upload-data',
+            children=html.Button('Load CSV Data', id='load-CSV-data-button'),
+            style={'width': '100%', 'height': '60px', 'lineHeight': '60px', 'borderWidth': '1px', 'borderStyle': 'dashed', 'borderRadius': '5px', 'textAlign': 'center', 'margin': '10px'},
+            multiple=True
+        ), 
+        html.Div(id='output-data-upload', style={'marginBottom': '20px'}), # Increased margin bottom for spacing
+        html.H5('Load CSV Label List'),
+        dcc.Upload(  # Upload component for the label CSV
+            id='upload-labels',
+            children=html.Button('Load Label List', id='load-labels-button'),
+            style={'width': '100%', 'height': '60px', 'lineHeight': '60px', 'borderWidth': '1px', 'borderStyle': 'dashed', 'borderRadius': '5px', 'textAlign': 'center', 'margin': '10px'},
+            multiple=False
+        ),
+        html.Div(id='labels-output', style={'marginBottom': '20px'}),
+        html.H5("Configurations"),
+        dbc.Row([  # Two columns for selecting time and label columns
+            dbc.Col(html.Div([
+                html.Label("Select Time Column:"),
+                dcc.Dropdown(id='time-column-dropdown'),
+            ], style={'marginBottom': '20px'}), width=6), # Added margin bottom
+            dbc.Col(html.Div([
+                html.Label("Select Label Column:"),
+                dcc.Dropdown(id='label-column-dropdown'),
+            ], style={'marginBottom': '20px'}), width=6) # Added margin bottom
+        ]),
+        dbc.Row([  # Row for feature selection and default plot columns with select all functionality
+            dbc.Col([
+                dbc.Row([
+                    dbc.Col(html.Label("Select Feature Columns:"), width=8),
+                    dbc.Col(dbc.Button("Select All", id="select-all-features", n_clicks=0, className="mr-1"), width=4),
+                ]),
+                dbc.Checklist(  # Checklist to select features
+                    options=[],
+                    id='feature-columns-checkboxes',
+                    inline=True,
+                    switch=True,
+                    style={'display': 'grid', 'gridTemplateColumns': 'repeat(auto-fill, minmax(120px, 1fr))', 'overflowY': 'auto', 'maxHeight': '200px'}
+                ),
+            ], width=6, style={'marginBottom': '20px'}), # Added margin bottom
+            dbc.Col([
+                dbc.Row([
+                    dbc.Col(html.Label("Select Features to Plot by Default:"), width=8),
+                    dbc.Col(dbc.Button("Select All", id="select-all-plots", n_clicks=0, className="mr-1"), width=4),
+                ]),
+                dbc.Checklist( # Checklist to select default plot columns
+                    options=[],
+                    id='plot-columns-checkboxes',
+                    inline=True,
+                    switch=True,
+                    style={'display': 'grid', 'gridTemplateColumns': 'repeat(auto-fill, minmax(120px, 1fr))', 'overflowY': 'auto', 'maxHeight': '200px'}
+                )
+            ], width=6, style={'marginBottom': '20px'}) # Added margin bottom
+        ]),
+        html.H5("Load Video Data", style={'marginBottom': '20px'}),
+        dcc.Upload(
+            id='upload-video',
+            children=html.Button('Load Video', id='load-video-button'),
+            style={'width': '100%', 'height': '60px', 'lineHeight': '60px', 'borderWidth': '1px', 'borderStyle': 'dashed', 'borderRadius': '5px', 'textAlign': 'center', 'margin': '10px', 'marginBottom': '20px'},
+            multiple=False  # Assuming only one video file is needed at a time
+        ),
+        html.H5("Video", style={'marginBottom': '20px'}),
+        # Initialize DashPlayer directly in the layout
+        dash_player.DashPlayer(
+            id='video-player',
+            controls=True,
+            playing=False,
+            width='100%',
+            height='400px',
+            url="init",  # Initial empty URL or placeholder video URL
+            style={'marginBottom': '20px'},
+        ), 
+        html.H5("Video Data Sync Offset", style={'marginBottom': '10px'}),
+        html.Div([
+            html.P([html.Strong("Zero Offset:"), " Sync Start - Video and data begin together."]),
+            html.P([html.Strong("Positive Offset:"), " Video Delay - Start video [offset] seconds after data."]),
+            html.P([html.Strong("Negative Offset:"), " Data Delay - Start data [offset] seconds after video."]),
+            dbc.Input(id='video-data-offset', type='number', placeholder="Enter offset in seconds...", step=1, style={'marginBottom': '10px'}),
+        ], style={'marginBottom': '20px'}),
+        dbc.Button("Save Configuration", id='save-config-button', className="mb-3", style={'marginTop': '20px', 'marginBottom': '20px'}),
+        html.Div(id='config-save-status', style={'marginTop': '20px'}),
+        dcc.Store(id='stored-manual-df'),
+        dcc.Store(id='video-data'),
+        dcc.Store(id='stored-labels')
+    ])
+    return layout
 
 def parse_contents(contents, filename, date):
     content_type, content_string = contents.split(',')
@@ -284,31 +284,39 @@ def save_configuration(n_clicks, selected_features, plot_features, all_options, 
         return "No data to save."
     
     # Load dataframes from the stored JSON
-    df = pd.read_json(stored_df_json, orient='split')   
+    df = pd.read_json(stored_df_json, orient='split')
     labels_df = pd.read_json(stored_labels_json, orient='split')
 
     # Determine features to omit by comparing all options against selected features
     all_features = [option['value'] for option in all_options]
     features_to_omit = [feature for feature in all_features if feature not in selected_features]
 
-    config = {
+    # Load existing configuration from file
+    config_path = 'assets/config.json'
+    if os.path.exists(config_path):
+        with open(config_path, 'r') as file:
+            config = json.load(file)
+    else:
+        config = {}
+
+    # Update configuration with new values
+    config.update({
         "valid_features": selected_features,
         "features_to_omit": features_to_omit,
         "features_to_plot": plot_features,
-        "video_path": video_url,  # Save the video path in configuration
-        "offset_manual": offset  # Include offset in the configuration
-    }
-    print("Config to be saved:", json.dumps(config, indent=4))
+        "video_path": video_url,
+        "offset_manual": offset,
+        "preprocessing_completed": True  # Set preprocessing to completed
+    })
 
-    # Save the configuration to a JSON file
-    config_path = os.path.join('assets/', 'config.json')  # Adjust the path as necessary
-    with open(config_path, 'w') as f:
-        json.dump(config, f, indent=4)
+    # Save the updated configuration back to the JSON file
+    with open(config_path, 'w') as file:
+        json.dump(config, file, indent=4)
     
     # Save the DataFrame and labels to CSV files
     df_path = os.path.join('assets', 'manual_label_df.csv')
     labels_path = os.path.join('assets', 'label_list.csv')
     df.to_csv(df_path, index=False)
     labels_df.to_csv(labels_path, index=False)
-    
-    return f"Configuration and data saved successfully! Configuration: assets/config.json, Data: assets/manual_label_df.csv, Labels: assets/label_list.csv"
+
+    return "Configuration and data saved successfully!"
