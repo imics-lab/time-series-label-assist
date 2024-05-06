@@ -69,20 +69,20 @@ def load_config():
 def render_tab_content(active_tab):
     try:
         config = load_config()
-        if active_tab != "preprocessing" and not config.get(f"can_access_{active_tab}", False):
+        if active_tab != "home" and active_tab != "preprocessing" and not config.get(f"can_access_{active_tab}", False):
             return html.Div(f"You do not have access to the {active_tab.replace('_', ' ').title()} section.")
 
-        if active_tab not in registered_modules:
+        # Access layout directly if the module is allowed or is the 'home' or 'preprocessing' tab
+        if active_tab in ['home', 'preprocessing'] or config.get(f"can_access_{active_tab}", False):
             module = globals().get(active_tab)
-            if module and hasattr(module, 'register_callbacks'):
-                module.register_callbacks(app)
-                registered_modules.add(active_tab)
-                print(f"Registered callbacks for {active_tab}")
+            if module and hasattr(module, 'layout'):
+                return module.layout()
+            elif active_tab == "home":
+                return html.Div("Welcome to the Home page!", className="p-4")
             else:
-                print(f"No callback registration function or module found for {active_tab}")
-
-        layout_func = module.layout if module else None
-        return layout_func() if layout_func else "No layout available for this module."
+                return "No layout available for this module."
+        else:
+            return html.Div(f"You do not have access to the {active_tab.replace('_', ' ').title()} section.")
     except Exception as e:
         print(f"Error processing tab {active_tab}: {e}")
         return html.Div(f"An error occurred while processing the tab {active_tab}.")
