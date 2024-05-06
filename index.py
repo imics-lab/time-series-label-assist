@@ -19,7 +19,7 @@ app.config.suppress_callback_exceptions = True  # Necessary for multi-page apps
 app.config.prevent_initial_callbacks = True
 
 def initialize_config():
-    config_path = 'assets/config.json'
+    config_path = 'config.json'
     default_config = {
         "can_access_manual_labeling": False,
         "can_access_model_training": False,
@@ -57,7 +57,7 @@ app.layout = html.Div([
 
 # Load the configuration
 def load_config():
-    config_path = 'assets/config.json'
+    config_path = 'config.json'
     with open(config_path, 'r') as file:
         return json.load(file)
 

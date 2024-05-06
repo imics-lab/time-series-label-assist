@@ -307,7 +307,7 @@ def save_configuration(n_clicks, selected_features, plot_features, all_options, 
     features_to_omit = [feature for feature in all_features if feature not in selected_features]
 
     # Load existing configuration from file
-    config_path = 'assets/config.json'
+    config_path = 'config.json'
     if os.path.exists(config_path):
         with open(config_path, 'r') as file:
             config = json.load(file)

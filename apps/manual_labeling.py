@@ -24,7 +24,7 @@ def layout():
     labelListDF = pd.read_csv(os.path.join(assets_dir, 'label_list.csv'))
     labelList = list(labelListDF)
 
-    config_path = os.path.join(assets_dir, 'config.json')
+    config_path = os.path.join('', 'config.json')
     with open(config_path, 'r') as file:
         config = json.load(file)
 
