@@ -373,7 +373,7 @@ def update_start_input(relayoutData, fill_ui_value):
         if 'fill-ui' in fill_ui_value:
             start_date = relayoutData['xaxis.range[0]']
             return start_date
-    return None
+    return ''
 
 @callback(
     Output('end-input', 'value'),
@@ -385,74 +385,46 @@ def update_end_input(relayoutData, fill_ui_value):
         if 'fill-ui' in fill_ui_value:
             end_date = relayoutData['xaxis.range[1]']
             return end_date
-    return None
+    return ''
 
 @callback(
-    Output('graph-output', 'figure'),
+    [Output('graph-output', 'figure'),
+     Output('data-store', 'data')],  # Include this to update the stored DataFrame
     [Input('btn-manual-label', 'n_clicks'),
      Input('button-sync-vid', 'n_clicks'),
-     Input('graph-output', 'relayoutData')],
+     Input('graph-output', 'relayoutData'),
+     Input('data-store', 'data')],
     [State('fill-ui-checkbox', 'value'),
      State('start-input', 'value'),
      State('end-input', 'value'),
      State('label-selection', 'value'),
-     State('confidence-selection', 'value'),
-     State('data-store', 'data')]
+     State('confidence-selection', 'value')]
 )
-def combined_callback(btn_manual_label, btn_sync_vid, relayoutData, fill_ui_value, start_input, end_input, label_selection, confidence_selection, jsonified_df):
-    ctx = dash.callback_context
+def combined_callback(btn_manual_label, btn_sync_vid, relayoutData, jsonified_df, fill_ui_value, start_input, end_input, label_selection, confidence_selection):
     df = pd.read_json(jsonified_df, orient='split')
-
-    # Determine which input was triggered
-    if not ctx.triggered:
-        return dash.no_update
+    labelsStartIndex, labelsEndIndex = calculate_label_indices(df)
 
     trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
-
     if trigger_id == 'btn-manual-label':
-        # Convert start and end input values to datetime if they're not None
         if start_input and end_input:
             start = pd.to_datetime(start_input)
             end = pd.to_datetime(end_input)
-        else:
-            start, end = None, None
-
-        # Use the label and confidence directly from the callback's state
-        label = label_selection
-        confidence = confidence_selection
-
-        # Update DataFrame with new label and confidence data
-        # Assuming update_dataframe updates your DataFrame based on start/end times, label, and confidence
-        update_dataframe(df, start, end, label, confidence)
-
-        # Recalculate label indices after updating DataFrame
-        labelsStartIndex, labelsEndIndex = calculate_label_indices(df)
-
-        # Replot the graph with updated data
-        return plotGraph(df, cols, colorDict=colorDict, confDict=confDict)
+            df.loc[(df['datetime'] >= start) & (df['datetime'] <= end), 'label'] = label_selection
+            df.loc[(df['datetime'] >= start) & (df['datetime'] <= end), 'confidence'] = confidence_selection
+            updated_figure = plotGraph(df, cols, colorDict, confDict, labelsStartIndex, labelsEndIndex)
+            return updated_figure, df.to_json(date_format='iso', orient='split')  # Return updated DataFrame in JSON format
 
     elif trigger_id == 'button-sync-vid':
-        # Sync video logic
-        # Get current video time and offset
         offset = int(update_video_offset.data)
         timestamp = int(update_time.data)
-
-        # Calculate the synchronization point in data
         vid_to_data_sync = calculate_sync_point(df, offset, timestamp)
-
-        # Recalculate label indices after updating DataFrame
-        labelsStartIndex, labelsEndIndex = calculate_label_indices(df)
-
-        # Update the graph with a sync point
-        return plotGraph_with_sync_point(df, cols, labelsStartIndex, labelsEndIndex, vid_to_data_sync)
+        updated_figure = plotGraph_with_sync_point(df, cols, labelsStartIndex, labelsEndIndex, vid_to_data_sync)
+        return updated_figure, df.to_json(date_format='iso', orient='split')
 
     elif trigger_id == 'graph-output':
-        # Check if the fill-ui-checkbox is checked and there is a selected range
         if 'fill-ui' in fill_ui_value and 'xaxis.range[0]' in relayoutData and 'xaxis.range[1]' in relayoutData:
             start_date = relayoutData['xaxis.range[0]']
             end_date = relayoutData['xaxis.range[1]']
-
-            # Add the shape for the highlighted region
             highlight_shape = {
                 'type': 'rect',
                 'xref': 'x',
@@ -464,7 +436,8 @@ def combined_callback(btn_manual_label, btn_sync_vid, relayoutData, fill_ui_valu
                 'fillcolor': 'rgba(0, 0, 255, 0.2)',
                 'line': {'width': 0},
             }
+            updated_figure = plotGraph(df, cols, colorDict, confDict, labelsStartIndex, labelsEndIndex, selected_range=(start_date, end_date), additional_shapes=[highlight_shape])
+            return updated_figure, df.to_json(date_format='iso', orient='split')
 
-            return plotGraph(df, cols, colorDict=colorDict, confDict=confDict, selected_range=(start_date, end_date), additional_shapes=[highlight_shape])
-    
-    return plotGraph(df, cols, colorDict=colorDict, confDict=confDict)
+    # Default case to handle general update or initialization
+    return plotGraph(df, cols, colorDict, confDict, labelsStartIndex, labelsEndIndex), jsonified_df  # Return the original data if no updates are done

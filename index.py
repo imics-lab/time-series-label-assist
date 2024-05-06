@@ -16,6 +16,7 @@ registered_modules = set()
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.title = 'ALVI'
 app.config.suppress_callback_exceptions = True  # Necessary for multi-page apps
+app.config.prevent_initial_callbacks = True
 
 def initialize_config():
     config_path = 'assets/config.json'
@@ -65,30 +66,26 @@ def load_config():
     [Input("tabs", "active_tab")]
 )
 def render_tab_content(active_tab):
-    # Load the current configuration to check access rights
-    config = load_config()
+    try:
+        config = load_config()
+        if active_tab != "preprocessing" and not config.get(f"can_access_{active_tab}", False):
+            return html.Div(f"You do not have access to the {active_tab.replace('_', ' ').title()} section.")
 
-    # Check access for all tabs except 'preprocessing'
-    if active_tab != "preprocessing" and not config.get(f"can_access_{active_tab}", False):
-        return html.Div(f"You do not have access to the {active_tab.replace('_', ' ').title()} section. Please complete the necessary steps in the previous sections.")
-
-    # If this is the first time this tab is being accessed, register its callbacks
-    if active_tab not in registered_modules:
-        try:
-            # Dynamically access the module from the global namespace
-            module = globals()[active_tab]
-            # Check if the module has a function to register callbacks
-            if hasattr(module, 'register_callbacks'):
+        if active_tab not in registered_modules:
+            module = globals().get(active_tab)
+            if module and hasattr(module, 'register_callbacks'):
                 module.register_callbacks(app)
                 registered_modules.add(active_tab)
                 print(f"Registered callbacks for {active_tab}")
-        except KeyError:
-            return html.Div("This tab has not been implemented yet.")
-    
-    # Now that we've confirmed the user has access (or it's the 'preprocessing' tab), get the layout from the module
-    layout_func = globals().get(active_tab).layout
-    return layout_func()
+            else:
+                print(f"No callback registration function or module found for {active_tab}")
+
+        layout_func = module.layout if module else None
+        return layout_func() if layout_func else "No layout available for this module."
+    except Exception as e:
+        print(f"Error processing tab {active_tab}: {e}")
+        return html.Div(f"An error occurred while processing the tab {active_tab}.")
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True, port=8055)
+    app.run_server(debug=True, port=8050)
