@@ -15,6 +15,7 @@ import os
 import json
 import glob as glob
 import shutil
+
 def layout():
     layout = html.Div([
         html.H3('Data Preprocessing'), # Title for the section
@@ -129,13 +130,22 @@ def parse_contents(contents, filename, date):
     except Exception as e:
         return html.Div([f'There was an error processing this file: {e}']), None
 
+@callback(
+    Output('trigger', 'children'),
+    Input('tabs', 'active_tab'),
+    prevent_initial_call=True
+)
+def set_trigger(active_tab):
+    return 'Loaded'
+
 # Callback to parse and display the contents of the uploaded files
 @callback(
     [Output('output-data-upload', 'children'),
      Output('stored-manual-df', 'data')], # Updating the display and storing the data
     Input('upload-data', 'contents'),
     State('upload-data', 'filename'),
-    State('upload-data', 'last_modified')
+    State('upload-data', 'last_modified'),
+    prevent_initial_call=False
 )
 def update_output(list_of_contents, list_of_names, list_of_dates):
     if list_of_contents is not None:
@@ -155,7 +165,8 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
     [Output('labels-output', 'children'),
      Output('stored-labels', 'data')],
     [Input('upload-labels', 'contents')],
-    [State('upload-labels', 'filename')]
+    [State('upload-labels', 'filename')],
+    prevent_initial_call=False
 )
 def update_labels(contents, filename):
     if contents is None:
@@ -173,7 +184,8 @@ def update_labels(contents, filename):
      Output('label-column-dropdown', 'options'),
      Output('feature-columns-checkboxes', 'options'),
      Output('plot-columns-checkboxes', 'options')],
-    Input('stored-manual-df', 'data')
+    Input('stored-manual-df', 'data'),
+    prevent_initial_call=False
 )
 def update_column_dropdowns(jsonified_dataframe):
     if jsonified_dataframe is None:
@@ -188,7 +200,8 @@ def update_column_dropdowns(jsonified_dataframe):
     [Input('time-column-dropdown', 'value'),
      Input('label-column-dropdown', 'value'),
      Input('feature-columns-checkboxes', 'value')],
-    State('stored-manual-df', 'data')
+    State('stored-manual-df', 'data'),
+    prevent_initial_call=False
 )
 def process_data(time_col, label_col, feature_cols, jsonified_dataframe):
     if jsonified_dataframe is None:
@@ -236,7 +249,8 @@ def select_all_plots(n_clicks, options):
 @callback(
     Output('video-player', 'url'),  # Updating the URL of the existing video player component
     Input('upload-video', 'contents'),
-    State('upload-video', 'filename')
+    State('upload-video', 'filename'),
+    prevent_initial_call=False
 )
 def update_video_output(contents, filename):
     if contents is None:
@@ -273,7 +287,8 @@ def update_video_output(contents, filename):
      State('stored-manual-df', 'data'),
      State('stored-labels', 'data'),
      State('video-player', 'url'),
-     State('video-data-offset', 'value')]
+     State('video-data-offset', 'value')],
+    prevent_initial_call=False
 )
 def save_configuration(n_clicks, selected_features, plot_features, all_options, stored_df_json, stored_labels_json, video_url, offset):
     if n_clicks is None:

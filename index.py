@@ -1,12 +1,12 @@
 import dash
 from dash import dcc, html, callback
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 import dash_player
 import os
 import json
 import importlib
-
+from dash.exceptions import PreventUpdate
 # Import modules
 from apps import preprocessing, manual_labeling, model_training, prediction, correct_autolabels
 
@@ -45,12 +45,13 @@ config = initialize_config()
 
 app.layout = html.Div([
     dbc.Tabs([
+        dbc.Tab(label="Home", tab_id="home"),
         dbc.Tab(label="Preprocessing", tab_id="preprocessing"),
         dbc.Tab(label="Manual Labeling", tab_id="manual_labeling"),
         dbc.Tab(label="Model Training", tab_id="model_training"),
         dbc.Tab(label="Prediction", tab_id="prediction"),
         dbc.Tab(label="Correct Autolabels", tab_id="correct_autolabels")
-    ], id="tabs", active_tab="preprocessing"),
+    ], id="tabs", active_tab="home"),
     html.Div(id="tab-content", className="p-4")
 ])
 
