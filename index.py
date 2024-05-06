@@ -7,12 +7,11 @@ import os
 import json
 import importlib
 
-# Import layouts from app modules
-from apps.preprocessing import layout as preprocessing_layout
-from apps.manual_labeling import layout as manual_labeling_layout
-from apps.model_training import layout as model_training_layout
-from apps.prediction import layout as prediction_layout
-from apps.correct_autolabels import layout as correct_autolabels_layout
+# Import modules
+from apps import preprocessing, manual_labeling, model_training, prediction, correct_autolabels
+
+# Track registered modules
+registered_modules = set()
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.title = 'ALVI'
@@ -66,24 +65,29 @@ def load_config():
     [Input("tabs", "active_tab")]
 )
 def render_tab_content(active_tab):
-    config = load_config()  # Load the configuration each time the tab changes
+    # Load the current configuration to check access rights
+    config = load_config()
 
-    # Define a dictionary to map tab ids to their respective layout functions
-    tab_layouts = {
-        "preprocessing": preprocessing_layout,  # Assuming preprocessing is always accessible
-        "manual_labeling": manual_labeling_layout,
-        "model_training": model_training_layout,
-        "prediction": prediction_layout,
-        "correct_autolabels": correct_autolabels_layout
-    }
-
-    # Check configuration to decide access
+    # Check access for all tabs except 'preprocessing'
     if active_tab != "preprocessing" and not config.get(f"can_access_{active_tab}", False):
         return html.Div(f"You do not have access to the {active_tab.replace('_', ' ').title()} section. Please complete the necessary steps in the previous sections.")
 
-    # Get the layout function based on the active tab, or show a default message if the tab isn't implemented
-    layout_func = tab_layouts.get(active_tab, lambda: "This tab has not been implemented yet.")
-    return layout_func()  # Call the function to get the layout
+    # If this is the first time this tab is being accessed, register its callbacks
+    if active_tab not in registered_modules:
+        try:
+            # Dynamically access the module from the global namespace
+            module = globals()[active_tab]
+            # Check if the module has a function to register callbacks
+            if hasattr(module, 'register_callbacks'):
+                module.register_callbacks(app)
+                registered_modules.add(active_tab)
+                print(f"Registered callbacks for {active_tab}")
+        except KeyError:
+            return html.Div("This tab has not been implemented yet.")
+    
+    # Now that we've confirmed the user has access (or it's the 'preprocessing' tab), get the layout from the module
+    layout_func = globals().get(active_tab).layout
+    return layout_func()
 
 
 if __name__ == '__main__':

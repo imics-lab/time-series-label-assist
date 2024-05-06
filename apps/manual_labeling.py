@@ -8,9 +8,12 @@ from plotly.subplots import make_subplots
 import pandas as pd
 import os
 import json
+import flask
 
 def layout():
     print("MANUAL LABELING TRIGGERED")
+    if not flask.request:
+        return html.Div()
     global labelList, valid_features, features_to_omit, cols, video_path, colorDict, confDict
     labelList = valid_features = features_to_omit = cols = video_path = None
     colorDict = confDict = {}
