@@ -11,7 +11,8 @@ from apps.prediction import layout as prediction_layout
 from apps.correct_autolabels import layout as correct_autolabels_layout
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-app.title = 'My Multi-Page Dash App'
+app.title = 'ALVI'
+app.config.suppress_callback_exceptions = True  # Necessary for multi-page apps
 
 # Define the app layout with navigation tabs
 app.layout = html.Div([
@@ -45,4 +46,4 @@ def render_tab_content(active_tab):
 
 # Run the app
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True, port=8052)

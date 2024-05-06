@@ -22,7 +22,7 @@ from datetime import timedelta
 
 import sys
 import os
-
+import json
 
 ##############################################################################################################################
 
@@ -31,8 +31,29 @@ df = pd.read_csv('assets/manual_label_df.csv')
 labelListDF = pd.read_csv('assets/label_list.csv')
 labelList = list(labelListDF)
 video_path = 'assets/manual_video.mp4' # local video in asset directory
-cols = list(pd.read_csv('assets/feature_cols.csv'))
 
+# Path to your JSON configuration
+working_dir = os.getcwd()
+assets_dir = os.path.join(working_dir, "assets")
+config_path = os.path.join(assets_dir, 'config.json')
+
+# Load the configuration
+with open(config_path, 'r') as file:
+    config = json.load(file)
+
+# Extract lists from the configuration
+valid_features = config["valid_features"]
+features_to_omit = config["features_to_omit"]
+cols = config["features_to_plot"]
+
+# if df has a confidence column, remove it from column list
+if "confidence" in cols:
+    pass
+    # cols.remove('confidence')
+# else, make a confidence column assigned an undefined
+else:
+    df['confidence'] = "Undefined"
+    
 colorList = ('#4363d8', '#e6194b', '#3cb44b', '#ffe119', '#f58231', '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe',
              '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080',
              '#000000')

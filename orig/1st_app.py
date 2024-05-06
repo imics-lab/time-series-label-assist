@@ -45,7 +45,7 @@ with open(config_path, 'r') as file:
 # Extract lists from the configuration
 valid_features = config["valid_features"]
 features_to_omit = config["features_to_omit"]
-cols = config["features_to_show"]
+cols = config["features_to_plot"]
 
 colorList = ('#4363d8', '#e6194b', '#3cb44b', '#f58231', '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe',
              '#008080', '#e6beff', '#9a6324', '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080',

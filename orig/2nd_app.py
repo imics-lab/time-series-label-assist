@@ -87,7 +87,7 @@ with open(config_path, 'r') as file:
 # Extract lists from the configuration
 valid_features = config["valid_features"]
 features_to_omit = config["features_to_omit"]
-cols = config["features_to_show"]
+cols = config["features_to_plot"]
 conf_thresh = config["conf_thresh"]
 #offset = 10 # config["offset"]
 
