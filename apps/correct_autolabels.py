@@ -27,26 +27,54 @@ import numpy as np
 import pickle
 from datetime import datetime
 
-#import tensorflow as tf
-#from tensorflow.keras.models import load_model
-
-
 from IPython.display import display
 import ipywidgets as widgets
 
 # HEAVY LIFTING
-# import tensorflow as tf
-# from tensorflow.keras.models import load_model
+import tensorflow as tf
+from tensorflow.keras.models import load_model
 
-# from prediction import split, model
-# import umap
+from prediction import split, model
+import umap
 
-# # The layout for the model training tab
-# layout = html.Div([
-#     html.H3('Model Training'),
-#     html.P('Section for training models on preprocessed data.')
-# ])
+############################################################################################################################################################
+# TOP LEVEL CODE
+# embedding_df, embedding, umap_to_ts_mapping, predicted_labels = rerender_umap_and_update_df(predictions, df, windows, num_to_label_dict, base_color_map)
 
+# flag_low_confidence_windows(df, predictions, windows, conf_thresh, modified_indices=modified_indices)
+# update_dataframe_with_predictions(df, predictions, umap_to_ts_mapping, num_to_label_dict)
+
+# # initialize plots
+# plotly_umap = px.scatter(
+#     embedding_df, 
+#     x='x', 
+#     y='y', 
+#     color=npInput_labels,
+#     hover_name=npInput_labels,
+#     color_discrete_map=color_discrete_map,
+#     custom_data=['index']
+# )
+# plotly_umap.update_layout(
+#     autosize=False,
+#     legend_title_text="Class",
+#     xaxis=dict(scaleanchor='y', scaleratio=1),
+#     yaxis=dict(scaleanchor='x',scaleratio=1,),
+#     xaxis_title=None, yaxis_title=None,
+# )
+
+# graph1 = px.scatter()
+# graph2 = px.scatter()
+# graph3 = px.scatter()
+
+# # Create a new figure
+# lineGraph = create_time_series_figure(valid_features, cols, df)
+
+# update_timeseries_plot_with_flags(df, lineGraph)
+# update_umap_plot_with_flags(embedding_df, plotly_umap)
+
+
+# external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+############################################################################################################################################################
 
 # Function to create the main layout
 def create_main_layout(conf_thresh, labelList, plotly_umap, lineGraph, video_path):
@@ -215,14 +243,14 @@ def layout():
 
         # 2. new_np
         # Loading the new_np object
-        with open(os.path.join('assets', 'time_series_processed_data.pkl'), 'rb') as file:
+        with open(os.path.join('prediction', 'np_auto_labeling.pkl'), 'rb') as file:
             new_np = pickle.load(file)
 
         # 3. df
         # 4. labelList
         # 5. cols
-        orig_df = pd.read_csv('assets/manual_label_df.csv')
-        df = pd.read_csv('assets/manual_label_df.csv')
+        orig_df = pd.read_csv('assets/auto_label_df.csv')
+        df = pd.read_csv('assets/auto_label_df.csv')
 
         # Create a temporary column for the rounded datetimes
         df['temp_datetime'] = pd.to_datetime(df['datetime']).dt.round('s')
@@ -237,7 +265,7 @@ def layout():
         #cols = list(pd.read_csv('assets/feature_cols.csv'))
         # json change
         # Path to your JSON configuration
-        config_path = os.path.join(assets_dir, 'config.json')
+        config_path = os.path.join('', 'config.json')
 
         # Load the configuration
         with open(config_path, 'r') as file:
@@ -255,8 +283,7 @@ def layout():
         window_size = 96
         step = 96
 
-        timestamps = pd.to_datetime(df['datetime'])  
-        #windows = [(timestamps[i], timestamps[min(i + window_size - 1, len(timestamps) - 1)]) for i in range(0, len(timestamps), window_size)]
+        timestamps = pd.to_datetime(df['datetime'])
         windows = [(timestamps[i], timestamps[min(i + window_size - 1, len(timestamps) - 1)]) for i in range(0, len(timestamps), window_size) if i + window_size <= len(timestamps)]
         testModel = model.CNN()
         testModel.setModel(new_model)
@@ -910,288 +937,287 @@ def update_dataframe(df, start, end, label, confidence):
 ##########################################################################################################
 # Callbacks
 ##########################################################################################################
-def register_callbacks(app):
-    @app.callback(
-        [
-            Output('umap-graph', 'figure'),
-            Output('plot-clicked', 'figure'),
-            Output('graph1', 'figure'),
-            Output('graph2', 'figure'),
-            Output('graph3', 'figure'),
-            Output('store_data', 'data'),
-            Output('umap-video-player', 'seekTo'),
-        ],
-        [
-            Input('umap-graph', 'clickData'),
-            Input('plot-clicked', 'clickData'),
-            Input('graph1', 'clickData'),
-            Input('graph2', 'clickData'),
-            Input('graph3', 'clickData'),
-            Input('button', 'n_clicks'),
-            Input('submit_button', 'n_clicks'), # umap params
-            Input('vid_sync_button', 'n_clicks'),
-            Input('btn-manual-label', 'n_clicks'), # added input for manual label
-            Input('ts-sync-vid', 'n_clicks'), # added input for syncing video
-            Input('plot-clicked', 'relayoutData') # added input for relayoutData
-        ],
-        [
-            State("dropdown", "value"),
-            State("store_data", "data"),
-            State('n_neighbors_input', 'value'), # umap params
-            State('min_dist_slider', 'value'), # umap params
-            State('umap-video-player', 'currentTime'),
-            State('ts-fill-ui-checkbox', 'value'), # added state for UI checkbox
-            State('ts-start-input', 'value'), # added state for start input
-            State('ts-end-input', 'value'), # added state for end input
-            State('ts-label-selection', 'value'), # added state for label selection
-            State('ts-confidence-selection', 'value') # added state for confidence selection
-        ] 
-    )
-    def update_app(umap_clickData, plot_clickData, graph1_clickData, graph2_clickData, graph3_clickData, label_n_clicks, umap_n_clicks, vid_sync_n_clicks, ts_label_n_clicks, ts_sync_vid_n_clicks, ts_relayout_data, value, data, n_neighbors, min_dist, current_time, fill_ui_value, start_input, end_input, label_selection, confidence_selection):
-        triggered = callback_context.triggered[0]['prop_id'].split('.')[0]
-        # intialize video seek time
-        video_seek_time = dash.no_update
+@callback(
+    [
+        Output('umap-graph', 'figure'),
+        Output('plot-clicked', 'figure'),
+        Output('graph1', 'figure'),
+        Output('graph2', 'figure'),
+        Output('graph3', 'figure'),
+        Output('store_data', 'data'),
+        Output('umap-video-player', 'seekTo'),
+    ],
+    [
+        Input('umap-graph', 'clickData'),
+        Input('plot-clicked', 'clickData'),
+        Input('graph1', 'clickData'),
+        Input('graph2', 'clickData'),
+        Input('graph3', 'clickData'),
+        Input('button', 'n_clicks'),
+        Input('submit_button', 'n_clicks'), # umap params
+        Input('vid_sync_button', 'n_clicks'),
+        Input('btn-manual-label', 'n_clicks'), # added input for manual label
+        Input('ts-sync-vid', 'n_clicks'), # added input for syncing video
+        Input('plot-clicked', 'relayoutData') # added input for relayoutData
+    ],
+    [
+        State("dropdown", "value"),
+        State("store_data", "data"),
+        State('n_neighbors_input', 'value'), # umap params
+        State('min_dist_slider', 'value'), # umap params
+        State('umap-video-player', 'currentTime'),
+        State('ts-fill-ui-checkbox', 'value'), # added state for UI checkbox
+        State('ts-start-input', 'value'), # added state for start input
+        State('ts-end-input', 'value'), # added state for end input
+        State('ts-label-selection', 'value'), # added state for label selection
+        State('ts-confidence-selection', 'value') # added state for confidence selection
+    ] 
+)
+def update_app(umap_clickData, plot_clickData, graph1_clickData, graph2_clickData, graph3_clickData, label_n_clicks, umap_n_clicks, vid_sync_n_clicks, ts_label_n_clicks, ts_sync_vid_n_clicks, ts_relayout_data, value, data, n_neighbors, min_dist, current_time, fill_ui_value, start_input, end_input, label_selection, confidence_selection):
+    triggered = callback_context.triggered[0]['prop_id'].split('.')[0]
+    # intialize video seek time
+    video_seek_time = dash.no_update
 
-        # Initialize figures with current state
-        umap_fig = create_umap_figure(embedding_df, npInput_labels)
+    # Initialize figures with current state
+    umap_fig = create_umap_figure(embedding_df, npInput_labels)
+    update_umap_plot_with_flags(embedding_df, umap_fig)
+    plot_fig = create_time_series_figure(valid_features, cols, df)
+    update_timeseries_plot_with_flags(df, plot_fig)
+    umap_fig.update_layout(autosize=False, xaxis_title=None, yaxis_title=None, legend_title_text="Class")
+
+    # TO DO: BUG FIX
+    # reset params
+    if triggered == 'submit_button':
+        rerender_umap_and_update_df(predictions, df, windows, num_to_label_dict, base_color_map, n_neighbors_value=n_neighbors, min_dist_value=min_dist)
+        flag_low_confidence_windows(df, predictions, windows, conf_thresh=conf_thresh, modified_indices=None)
+        update_umap_plot_with_flags(embedding_df, umap_fig)
+        update_timeseries_plot_with_flags(df, plot_fig)
+        return [create_umap_figure(embedding_df, predicted_labels)] + [dash.no_update]*6
+    
+    # vid to data sync button click
+    if triggered == 'vid_sync_button':
+        umap_fig = clear_highlights(umap_fig, "umap")
+        plot_fig = clear_highlights(plot_fig, "ts")
+        # ensure flagged labels are still shown
+        update_umap_plot_with_flags(embedding_df, umap_fig)
+        update_timeseries_plot_with_flags(df, plot_fig)
+
+        # Use the helper function to find the corresponding window index
+        window_index = video_time_to_window_index(current_time, video_start_time, windows)
+        
+        # If a valid window index is found, proceed to highlight and update plots
+        if window_index is not None:
+            # Assuming that the UMAP and window mappings are properly set up:
+            selected_index = window_index  # This might need adjustment based on your specific setup
+            nearest_overall_index, nearest_same_type_index = nearestNeighbor(embedding, selected_index, npInput)
+
+            umap_fig = highlight_umap_point(umap_fig, selected_index, nearest_overall_index, nearest_same_type_index)
+            highlight_time_series_window(plot_fig, selected_index, df, new_np, embedding, npInput)
+            update_subgraphs(graph1, graph2, graph3, selected_index, df, new_np, embedding, npInput)
+        else:
+            print(f"No corresponding window found for video time {current_time}s")
+        
+        video_seek_time = dash.no_update
+        
+    # Click on time-series plots
+    if triggered in ['plot-clicked', 'graph1', 'graph2', 'graph3']:
+        if triggered == 'plot-clicked':
+            clickData = plot_clickData
+        elif triggered == 'graph1':
+            clickData = graph1_clickData
+        elif triggered == 'graph2':
+            clickData = graph2_clickData
+        elif triggered == 'graph3':
+            clickData = graph3_clickData
+        else:
+            raise PreventUpdate 
+        if clickData is not None:
+            # TO DO: change to call create umap
+            clicked_datetime = pd.to_datetime(clickData['points'][0]['x'])
+            npInput_labels_updated = np.array([num_to_label_dict[code] for code in npInput])
+            color_discrete_map_updated = {label: base_color_map.get(label, '#000000') for label in np.unique(npInput_labels_updated)}
+            umap_fig = px.scatter(
+                embedding_df, x='x', y='y', color=npInput_labels_updated, hover_name=npInput_labels_updated,
+                color_discrete_map=color_discrete_map_updated, custom_data=['index']
+            ).update_layout(autosize=False, xaxis_title=None, yaxis_title=None, legend_title_text="Class")
+            umap_point_index = find_umap_point_from_ts(clicked_datetime, windows)
+            nearest_overall_index, nearest_same_type_index = nearestNeighbor(embedding, umap_point_index, npInput)
+        else:
+            return dash.no_update
+
+        if umap_point_index is not None:
+            window_start, window_end = umap_to_ts_mapping.get(umap_point_index, (None, None))
+            if window_start and window_end:
+                umap_fig = highlight_umap_point(umap_fig, umap_point_index, nearest_overall_index, nearest_same_type_index)
+                highlight_time_series_window(plot_fig, umap_point_index, df, new_np, embedding, npInput)
+                update_subgraphs(graph1, graph2, graph3, umap_point_index, df, new_np, embedding, npInput)
+            
+            # Calculate video seek time based on the time window start
+            if window_start:
+                video_seek_time = (window_start - video_start_time).total_seconds()
+
+    #if triggered == 'plot-clicked' and 'relayoutData' in ctx.triggered[0]['prop_id']:
+    if 'relayoutData' in ctx.triggered[0]['prop_id']:
+        # Check if the fill-ui-checkbox is checked and there is a selected range
+        if 'fill-ui' in fill_ui_value and 'xaxis.range[0]' in ts_relayout_data and 'xaxis.range[1]' in ts_relayout_data:
+            start_date = ts_relayout_data['xaxis.range[0]']
+            end_date = ts_relayout_data['xaxis.range[1]']
+            # Add the shape for the highlighted region
+            highlight_shape = {
+                'type': 'rect',
+                'xref': 'x',
+                'yref': 'paper',
+                'x0': start_date,
+                'x1': end_date,
+                'y0': 0,
+                'y1': 1,
+                'fillcolor': 'rgba(0, 0, 255, 0.2)',
+                'line': {'width': 0},
+            }
+            additional_shapes=[highlight_shape]
+            plot_fig = create_time_series_figure(valid_features, cols, df, additional_shapes)
+
+    # click on umap
+    if triggered == 'umap-graph':
+        umap_fig = clear_highlights(umap_fig, "umap")
+        npInput_labels_updated = np.array([num_to_label_dict[code] for code in npInput])
+        color_discrete_map_updated = {label: base_color_map.get(label, '#000000') for label in np.unique(npInput_labels_updated)}
+        umap_fig = px.scatter(
+            embedding_df, x='x', y='y', color=npInput_labels_updated, hover_name=npInput_labels_updated,
+            color_discrete_map=color_discrete_map_updated, custom_data=['index']
+        ).update_layout(autosize=False, xaxis_title=None, yaxis_title=None, legend_title_text="Class")
+        #plot_fig = clear_highlights(plot_fig, "ts")
+        # ensure flagged labels are still shown
+        update_umap_plot_with_flags(embedding_df, umap_fig)
+        update_timeseries_plot_with_flags(df, plot_fig)
+
+        # Extract the index of the clicked point in the UMAP plot
+        selected_index = umap_clickData["points"][0]["customdata"][0]
+        nearest_overall_index, nearest_same_type_index = nearestNeighbor(embedding, selected_index, npInput)
+
+        # Use the mapping to find the corresponding time series window
+        window_start, window_end = umap_to_ts_mapping.get(selected_index, (None, None))
+        if window_start and window_end:
+            umap_fig = highlight_umap_point(umap_fig, selected_index, nearest_overall_index, nearest_same_type_index)
+            highlight_time_series_window(plot_fig, selected_index, df, new_np, embedding, npInput)
+            update_subgraphs(graph1, graph2, graph3, selected_index, df, new_np, embedding, npInput)
+
+        window_start = embedding_df.loc[selected_index, 'window_start']
+        # If window_start is a datetime object, convert it to the video timeline
+        if not pd.isnull(window_start):
+            # Ensure window_start is a datetime object
+            if isinstance(window_start, str):
+                window_start = datetime.strptime(window_start, '%Y-%m-%d %H:%M:%S')
+            
+            # Calculate video seek time in seconds
+            video_seek_time = (window_start - video_start_time).total_seconds()
+
+        else:
+            raise PreventUpdate
+
+    # label change on umap
+    if "button" == ctx.triggered_id:
+        selected_index = umap_clickData["points"][0]["customdata"][0] if umap_clickData else None
+        modified_indices = update_label(selected_index, value, npInput, npInput_labels, label_num_dict, manual_confidence=True)
+        # TO DO: change to call create umap
+        npInput_labels_updated = np.array([num_to_label_dict[code] for code in npInput])
+        color_discrete_map_updated = {label: base_color_map.get(label, '#000000') for label in np.unique(npInput_labels_updated)}
+        umap_fig = px.scatter(
+            embedding_df, x='x', y='y', color=npInput_labels_updated, hover_name=npInput_labels_updated,
+            color_discrete_map=color_discrete_map_updated, custom_data=['index']
+        ).update_layout(autosize=False, xaxis_title=None, yaxis_title=None, legend_title_text="Class")
+        flag_low_confidence_windows(df, predictions, windows, conf_thresh=conf_thresh, modified_indices=modified_indices)
         update_umap_plot_with_flags(embedding_df, umap_fig)
         plot_fig = create_time_series_figure(valid_features, cols, df)
         update_timeseries_plot_with_flags(df, plot_fig)
-        umap_fig.update_layout(autosize=False, xaxis_title=None, yaxis_title=None, legend_title_text="Class")
 
-        # TO DO: BUG FIX
-        # reset params
-        if triggered == 'submit_button':
-            rerender_umap_and_update_df(predictions, df, windows, num_to_label_dict, base_color_map, n_neighbors_value=n_neighbors, min_dist_value=min_dist)
-            flag_low_confidence_windows(df, predictions, windows, conf_thresh=conf_thresh, modified_indices=None)
-            update_umap_plot_with_flags(embedding_df, umap_fig)
-            update_timeseries_plot_with_flags(df, plot_fig)
-            return [create_umap_figure(embedding_df, predicted_labels)] + [dash.no_update]*6
+    if triggered == 'btn-manual-label':
+        # DF data
+        # Update label and confidence data
+        start = start_input
+        end = end_input
+        start_dt = pd.to_datetime(start_input)
+        end_dt = pd.to_datetime(end_input)
+        label = label_selection
+        confidence = confidence_selection
         
-        # vid to data sync button click
-        if triggered == 'vid_sync_button':
-            umap_fig = clear_highlights(umap_fig, "umap")
-            plot_fig = clear_highlights(plot_fig, "ts")
-            # ensure flagged labels are still shown
-            update_umap_plot_with_flags(embedding_df, umap_fig)
-            update_timeseries_plot_with_flags(df, plot_fig)
+        # Update DataFrame with new label and confidence data
+        update_dataframe(df, start, end, label, confidence)
 
-            # Use the helper function to find the corresponding window index
-            window_index = video_time_to_window_index(current_time, video_start_time, windows)
-            
-            # If a valid window index is found, proceed to highlight and update plots
-            if window_index is not None:
-                # Assuming that the UMAP and window mappings are properly set up:
-                selected_index = window_index  # This might need adjustment based on your specific setup
-                nearest_overall_index, nearest_same_type_index = nearestNeighbor(embedding, selected_index, npInput)
+        # Recalculate label indices after updating DataFrame
+        labelsStartIndex, labelsEndIndex = calculate_label_indices(df)
 
-                umap_fig = highlight_umap_point(umap_fig, selected_index, nearest_overall_index, nearest_same_type_index)
-                highlight_time_series_window(plot_fig, selected_index, df, new_np, embedding, npInput)
-                update_subgraphs(graph1, graph2, graph3, selected_index, df, new_np, embedding, npInput)
-            else:
-                print(f"No corresponding window found for video time {current_time}s")
-            
-            video_seek_time = dash.no_update
-            
-        # Click on time-series plots
-        if triggered in ['plot-clicked', 'graph1', 'graph2', 'graph3']:
-            if triggered == 'plot-clicked':
-                clickData = plot_clickData
-            elif triggered == 'graph1':
-                clickData = graph1_clickData
-            elif triggered == 'graph2':
-                clickData = graph2_clickData
-            elif triggered == 'graph3':
-                clickData = graph3_clickData
-            else:
-                raise PreventUpdate 
-            if clickData is not None:
-                # TO DO: change to call create umap
-                clicked_datetime = pd.to_datetime(clickData['points'][0]['x'])
-                npInput_labels_updated = np.array([num_to_label_dict[code] for code in npInput])
-                color_discrete_map_updated = {label: base_color_map.get(label, '#000000') for label in np.unique(npInput_labels_updated)}
-                umap_fig = px.scatter(
-                    embedding_df, x='x', y='y', color=npInput_labels_updated, hover_name=npInput_labels_updated,
-                    color_discrete_map=color_discrete_map_updated, custom_data=['index']
-                ).update_layout(autosize=False, xaxis_title=None, yaxis_title=None, legend_title_text="Class")
-                umap_point_index = find_umap_point_from_ts(clicked_datetime, windows)
-                nearest_overall_index, nearest_same_type_index = nearestNeighbor(embedding, umap_point_index, npInput)
-            else:
-                return dash.no_update
+        # recreate
+        plot_fig = create_time_series_figure(valid_features, cols, df)
 
-            if umap_point_index is not None:
-                window_start, window_end = umap_to_ts_mapping.get(umap_point_index, (None, None))
-                if window_start and window_end:
-                    umap_fig = highlight_umap_point(umap_fig, umap_point_index, nearest_overall_index, nearest_same_type_index)
-                    highlight_time_series_window(plot_fig, umap_point_index, df, new_np, embedding, npInput)
-                    update_subgraphs(graph1, graph2, graph3, umap_point_index, df, new_np, embedding, npInput)
-                
-                # Calculate video seek time based on the time window start
-                if window_start:
-                    video_seek_time = (window_start - video_start_time).total_seconds()
-
-        #if triggered == 'plot-clicked' and 'relayoutData' in ctx.triggered[0]['prop_id']:
-        if 'relayoutData' in ctx.triggered[0]['prop_id']:
-            # Check if the fill-ui-checkbox is checked and there is a selected range
-            if 'fill-ui' in fill_ui_value and 'xaxis.range[0]' in ts_relayout_data and 'xaxis.range[1]' in ts_relayout_data:
-                start_date = ts_relayout_data['xaxis.range[0]']
-                end_date = ts_relayout_data['xaxis.range[1]']
-                # Add the shape for the highlighted region
-                highlight_shape = {
-                    'type': 'rect',
-                    'xref': 'x',
-                    'yref': 'paper',
-                    'x0': start_date,
-                    'x1': end_date,
-                    'y0': 0,
-                    'y1': 1,
-                    'fillcolor': 'rgba(0, 0, 255, 0.2)',
-                    'line': {'width': 0},
-                }
-                additional_shapes=[highlight_shape]
-                plot_fig = create_time_series_figure(valid_features, cols, df, additional_shapes)
-
-        # click on umap
-        if triggered == 'umap-graph':
-            umap_fig = clear_highlights(umap_fig, "umap")
-            npInput_labels_updated = np.array([num_to_label_dict[code] for code in npInput])
-            color_discrete_map_updated = {label: base_color_map.get(label, '#000000') for label in np.unique(npInput_labels_updated)}
-            umap_fig = px.scatter(
-                embedding_df, x='x', y='y', color=npInput_labels_updated, hover_name=npInput_labels_updated,
-                color_discrete_map=color_discrete_map_updated, custom_data=['index']
-            ).update_layout(autosize=False, xaxis_title=None, yaxis_title=None, legend_title_text="Class")
-            #plot_fig = clear_highlights(plot_fig, "ts")
-            # ensure flagged labels are still shown
-            update_umap_plot_with_flags(embedding_df, umap_fig)
-            update_timeseries_plot_with_flags(df, plot_fig)
-
-            # Extract the index of the clicked point in the UMAP plot
-            selected_index = umap_clickData["points"][0]["customdata"][0]
-            nearest_overall_index, nearest_same_type_index = nearestNeighbor(embedding, selected_index, npInput)
-
-            # Use the mapping to find the corresponding time series window
-            window_start, window_end = umap_to_ts_mapping.get(selected_index, (None, None))
-            if window_start and window_end:
-                umap_fig = highlight_umap_point(umap_fig, selected_index, nearest_overall_index, nearest_same_type_index)
-                highlight_time_series_window(plot_fig, selected_index, df, new_np, embedding, npInput)
-                update_subgraphs(graph1, graph2, graph3, selected_index, df, new_np, embedding, npInput)
-
-            window_start = embedding_df.loc[selected_index, 'window_start']
-            # If window_start is a datetime object, convert it to the video timeline
-            if not pd.isnull(window_start):
-                # Ensure window_start is a datetime object
-                if isinstance(window_start, str):
-                    window_start = datetime.strptime(window_start, '%Y-%m-%d %H:%M:%S')
-                
-                # Calculate video seek time in seconds
-                video_seek_time = (window_start - video_start_time).total_seconds()
-
-            else:
-                raise PreventUpdate
-
-        # label change on umap
-        if "button" == ctx.triggered_id:
-            selected_index = umap_clickData["points"][0]["customdata"][0] if umap_clickData else None
-            modified_indices = update_label(selected_index, value, npInput, npInput_labels, label_num_dict, manual_confidence=True)
-            # TO DO: change to call create umap
-            npInput_labels_updated = np.array([num_to_label_dict[code] for code in npInput])
-            color_discrete_map_updated = {label: base_color_map.get(label, '#000000') for label in np.unique(npInput_labels_updated)}
-            umap_fig = px.scatter(
-                embedding_df, x='x', y='y', color=npInput_labels_updated, hover_name=npInput_labels_updated,
-                color_discrete_map=color_discrete_map_updated, custom_data=['index']
-            ).update_layout(autosize=False, xaxis_title=None, yaxis_title=None, legend_title_text="Class")
-            flag_low_confidence_windows(df, predictions, windows, conf_thresh=conf_thresh, modified_indices=modified_indices)
-            update_umap_plot_with_flags(embedding_df, umap_fig)
-            plot_fig = create_time_series_figure(valid_features, cols, df)
-            update_timeseries_plot_with_flags(df, plot_fig)
-
-        if triggered == 'btn-manual-label':
-            # DF data
-            # Update label and confidence data
-            start = start_input
-            end = end_input
-            start_dt = pd.to_datetime(start_input)
-            end_dt = pd.to_datetime(end_input)
-            label = label_selection
-            confidence = confidence_selection
-            
-            # Update DataFrame with new label and confidence data
-            update_dataframe(df, start, end, label, confidence)
-
-            # Recalculate label indices after updating DataFrame
-            labelsStartIndex, labelsEndIndex = calculate_label_indices(df)
-
-            # recreate
-            plot_fig = create_time_series_figure(valid_features, cols, df)
-
-            # Find which windows are affected by the time range selected
-            affected_windows = []
-            for i, window in enumerate(windows):
-                if start_dt <= window[1] and end_dt >= window[0]:  # Check if the selected range overlaps with the window
-                    affected_windows.append(i)
-            
-            # Update predictions for affected windows
-            if label in label_num_dict:
-                new_label_code = label_num_dict[label]
-                for idx in affected_windows:
-                    predictions[idx, :] = 0  # Reset the prediction
-                    predictions[idx, new_label_code] = 1.0  # Set the chosen label with full confidence
-
-
-            rerender_umap_and_update_df(predictions, df, windows, num_to_label_dict, base_color_map, n_neighbors_value=n_neighbors, min_dist_value=min_dist)
-
-            # Update the UMAP plot
-            umap_fig = create_umap_figure(embedding_df, predicted_labels)
-            flag_low_confidence_windows(df, predictions, windows, conf_thresh=conf_thresh, modified_indices=None)
-            update_timeseries_plot_with_flags(df, plot_fig)
-            update_umap_plot_with_flags(embedding_df, umap_fig)
-
-        # TO DO:
-        # if triggered == 'ts-sync-vid':
-        #     # Logic for syncing video
-        #     # This is an assumed function
-        #     return sync_video_to_data(df, current_time)
-
-        return umap_fig, plot_fig, graph1, graph2, graph3, data, video_seek_time
-
-    @app.callback(
-        Output('save_status', 'children'),
-        [Input('save_changes_button', 'n_clicks')],
-        prevent_initial_call=True
-    )
-    def save_changes(n_clicks):
-        if n_clicks > 0:  # Check if the button has been clicked
-            try:
-                # Attempt to save the updated 'new_np' object. Ensure 'new_np' is accessible.
-                with open(os.path.join('assets', 'time_series_processed_data.pkl'), 'wb') as file:
-                    pickle.dump(new_np, file)
-                return 'Changes saved successfully!'  # Update the component with a success message
-            except Exception as e:
-                return f'Error saving changes: {e}'  # Update the component with an error message
-        return ''  # Initial or default state with no message
-
-    # checkbox for auto fill start end datetime selection on manual graph callbacks
-    @app.callback(
-        Output('ts-start-input', 'value'),
-        Input('plot-clicked', 'relayoutData'),
-        State('ts-fill-ui-checkbox', 'value')
-    )
-    def update_start_input(relayoutData, fill_ui_value):
-        if relayoutData and 'xaxis.range[0]' in relayoutData:
-            if 'fill-ui' in fill_ui_value:
-                start_date = relayoutData['xaxis.range[0]']
-                return start_date
-        return None
-
-    @app.callback(
-        Output('ts-end-input', 'value'),
-        Input('plot-clicked', 'relayoutData'),
-        State('ts-fill-ui-checkbox', 'value')
-    )
-    def update_end_input(relayoutData, fill_ui_value):
-        if relayoutData and 'xaxis.range[1]' in relayoutData:
-            if 'fill-ui' in fill_ui_value:
-                end_date = relayoutData['xaxis.range[1]']
-                return end_date
-        return None
+        # Find which windows are affected by the time range selected
+        affected_windows = []
+        for i, window in enumerate(windows):
+            if start_dt <= window[1] and end_dt >= window[0]:  # Check if the selected range overlaps with the window
+                affected_windows.append(i)
         
+        # Update predictions for affected windows
+        if label in label_num_dict:
+            new_label_code = label_num_dict[label]
+            for idx in affected_windows:
+                predictions[idx, :] = 0  # Reset the prediction
+                predictions[idx, new_label_code] = 1.0  # Set the chosen label with full confidence
+
+
+        rerender_umap_and_update_df(predictions, df, windows, num_to_label_dict, base_color_map, n_neighbors_value=n_neighbors, min_dist_value=min_dist)
+
+        # Update the UMAP plot
+        umap_fig = create_umap_figure(embedding_df, predicted_labels)
+        flag_low_confidence_windows(df, predictions, windows, conf_thresh=conf_thresh, modified_indices=None)
+        update_timeseries_plot_with_flags(df, plot_fig)
+        update_umap_plot_with_flags(embedding_df, umap_fig)
+
+    # TO DO:
+    # if triggered == 'ts-sync-vid':
+    #     # Logic for syncing video
+    #     # This is an assumed function
+    #     return sync_video_to_data(df, current_time)
+
+    return umap_fig, plot_fig, graph1, graph2, graph3, data, video_seek_time
+
+@callback(
+    Output('save_status', 'children'),
+    [Input('save_changes_button', 'n_clicks')],
+    prevent_initial_call=True
+)
+def save_changes(n_clicks):
+    if n_clicks > 0:  # Check if the button has been clicked
+        try:
+            # Attempt to save the updated 'new_np' object. Ensure 'new_np' is accessible.
+            with open(os.path.join('assets', 'time_series_processed_data.pkl'), 'wb') as file:
+                pickle.dump(new_np, file)
+            return 'Changes saved successfully!'  # Update the component with a success message
+        except Exception as e:
+            return f'Error saving changes: {e}'  # Update the component with an error message
+    return ''  # Initial or default state with no message
+
+# checkbox for auto fill start end datetime selection on manual graph callbacks
+@callback(
+    Output('ts-start-input', 'value'),
+    Input('plot-clicked', 'relayoutData'),
+    State('ts-fill-ui-checkbox', 'value')
+)
+def update_start_input(relayoutData, fill_ui_value):
+    if relayoutData and 'xaxis.range[0]' in relayoutData:
+        if 'fill-ui' in fill_ui_value:
+            start_date = relayoutData['xaxis.range[0]']
+            return start_date
+    return None
+
+@callback(
+    Output('ts-end-input', 'value'),
+    Input('plot-clicked', 'relayoutData'),
+    State('ts-fill-ui-checkbox', 'value')
+)
+def update_end_input(relayoutData, fill_ui_value):
+    if relayoutData and 'xaxis.range[1]' in relayoutData:
+        if 'fill-ui' in fill_ui_value:
+            end_date = relayoutData['xaxis.range[1]']
+            return end_date
+    return None
+    
