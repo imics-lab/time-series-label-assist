@@ -199,20 +199,39 @@ def predict_labels(n_clicks, window_size, steps, confidence_threshold, model_nam
         labelList = pd.read_csv(label_list_path)
         labelList = list(labelList)
 
-        df['sub'] = "Undefined"
+        if 'sub' in df.columns:
+            df['sub'] = "Undefined"
         df = df.set_index('datetime')
 
         np_labeling = split.TimeSeriesNP(window_size, steps)
         print("Label list used:\n", labelList)
         np_labeling.setArrays(df, encode=True, one_hot_encode=False, labels=labelList, filter=False)
         print(np_labeling.y)
+        
         testModel = model.CNN()
         testModel.setModel(model_loaded)
         testModel.only_test_data(np_labeling.x, np_labeling.y)
 
         print("Label Mapping: ", np_labeling.mapping)
         predictions, labeledDf = labelDf(df, np_labeling.mapping, testModel.model, np_labeling)
-        
+
+        # Identify the position of the original 'label' column, if it exists
+        if 'label' in labeledDf.columns:
+            # Get the index of the original 'label' column
+            label_index = labeledDf.columns.get_loc('label')
+            # Drop the original 'label' column
+            labeledDf = labeledDf.drop(columns=['label'])
+            # Insert 'pred_labels' column at the position of the original 'label' column
+            labeledDf.insert(label_index, 'label', labeledDf['pred_labels'])
+            # Drop the 'pred_labels' as it's now renamed and moved
+            labeledDf = labeledDf.drop(columns=['pred_labels'])
+        else:
+            # If no original 'label' column, just rename 'pred_labels' to 'label'
+            labeledDf = labeledDf.rename(columns={'pred_labels': 'label'})
+
+        np_labeling.setArrays(labeledDf, encode=True, one_hot_encode=False, labels=labelList, filter=False)
+        print(np_labeling.y)
+
         # Define a path to the assets directory
         prediction_directory = 'prediction'
         if not os.path.exists(prediction_directory):
@@ -237,25 +256,11 @@ def predict_labels(n_clicks, window_size, steps, confidence_threshold, model_nam
         print(f"NumPy predictions array saved to {labeled_array_file_path}")        
 
         # Extract label counts from the updated dataframe
-        label_counts = labeledDf['pred_labels'].value_counts().reset_index()
+        label_counts = labeledDf['label'].value_counts().reset_index()
         label_counts.columns = ['Label', 'Count']
         label_counts_html = [
             html.Tr([html.Td(label), html.Td(str(count))]) for label, count in label_counts.itertuples(index=False)
         ]
-
-        # Identify the position of the original 'label' column, if it exists
-        if 'label' in labeledDf.columns:
-            # Get the index of the original 'label' column
-            label_index = labeledDf.columns.get_loc('label')
-            # Drop the original 'label' column
-            labeledDf = labeledDf.drop(columns=['label'])
-            # Insert 'pred_labels' column at the position of the original 'label' column
-            labeledDf.insert(label_index, 'label', labeledDf['pred_labels'])
-            # Drop the 'pred_labels' as it's now renamed and moved
-            labeledDf = labeledDf.drop(columns=['pred_labels'])
-        else:
-            # If no original 'label' column, just rename 'pred_labels' to 'label'
-            labeledDf = labeledDf.rename(columns={'pred_labels': 'label'})
 
         # Save updated DataFrame
         labeled_file_path = os.path.join("assets", 'auto_label_df.csv')
