@@ -27,15 +27,18 @@ def initialize_config():
         "can_access_prediction": False,
         "can_access_correct_autolabels": False
     }
-    if not os.path.exists(config_path):
-        os.makedirs(os.path.dirname(config_path), exist_ok=True)
-        config = default_config
-    else:
+    # Ensure the directory for the configuration file exists
+    os.makedirs(os.path.dirname(config_path), exist_ok=True)
+
+    if os.path.exists(config_path):
         with open(config_path, 'r') as file:
             existing_config = json.load(file)
-        # Merge defaults with existing to ensure all keys are present
-        config = {**default_config, **existing_config}
-    
+        # Merge existing configuration with defaults where specific keys are overridden
+        config = {**existing_config, **default_config}
+    else:
+        config = default_config
+
+    # Write the possibly updated configuration back to the file
     with open(config_path, 'w') as file:
         json.dump(config, file, indent=4)
 
