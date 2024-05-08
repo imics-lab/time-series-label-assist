@@ -9,6 +9,7 @@ import importlib
 from dash.exceptions import PreventUpdate
 # Import modules
 from apps import preprocessing, manual_labeling, model_training, prediction, correct_autolabels
+import traceback
 
 # Track registered modules
 registered_modules = set()
@@ -85,6 +86,8 @@ def render_tab_content(active_tab):
             return html.Div(f"You do not have access to the {active_tab.replace('_', ' ').title()} section.")
     except Exception as e:
         print(f"Error processing tab {active_tab}: {e}")
+        # Print the full traceback
+        traceback.print_exc()
         return html.Div(f"An error occurred while processing the tab {active_tab}.")
 
 

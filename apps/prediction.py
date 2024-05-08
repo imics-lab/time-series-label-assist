@@ -204,7 +204,7 @@ def predict_labels(n_clicks, window_size, steps, confidence_threshold, model_nam
 
         np_labeling = split.TimeSeriesNP(window_size, steps)
         print("Label list used:\n", labelList)
-        np_labeling.setArrays(df, encode=True, one_hot_encode=True, labels=labelList, filter=False)
+        np_labeling.setArrays(df, encode=True, one_hot_encode=False, labels=labelList, filter=False)
 
         testModel = model.CNN()
         testModel.setModel(model_loaded)
@@ -212,9 +212,17 @@ def predict_labels(n_clicks, window_size, steps, confidence_threshold, model_nam
 
         print("Label Mapping: ", np_labeling.mapping)
         predictions, labeledDf = labelDf(df, np_labeling.mapping, testModel.model, np_labeling)
-        global autoLabelPred
-        autoLabelPred = predictions
         
+        # Define a path to the assets directory
+        prediction_directory = 'prediction'
+        if not os.path.exists(prediction_directory):
+            os.makedirs(prediction_directory)
+
+        file_path = os.path.join(prediction_directory, 'np_auto_labeling.pkl')
+
+        with open(file_path, 'wb') as f:
+            pickle.dump(np_labeling, f)   
+                 
         labeled_file_path = os.path.join('', "assets", 'auto_label_df.csv')
         # Check if there's a datetime column in your DataFrame
         if 'datetime' in labeledDf.columns:
@@ -251,18 +259,8 @@ def predict_labels(n_clicks, window_size, steps, confidence_threshold, model_nam
 
         # Save updated DataFrame
         labeled_file_path = os.path.join("assets", 'auto_label_df.csv')
-        labeledDf.to_csv(labeled_file_path, index=False)
+        labeledDf.to_csv(labeled_file_path, index=True)
         print(f"Updated dataset saved to {labeled_file_path}")
-
-        # Define a path to the assets directory
-        prediction_directory = 'prediction'
-        if not os.path.exists(prediction_directory):
-            os.makedirs(prediction_directory)
-
-        file_path = os.path.join(prediction_directory, 'np_auto_labeling.pkl')
-
-        with open(file_path, 'wb') as f:
-            pickle.dump(np_labeling, f)
 
         return html.Div([
             html.H5("Label Mapping:"),

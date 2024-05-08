@@ -77,7 +77,7 @@ import umap
 ############################################################################################################################################################
 
 # Function to create the main layout
-def create_main_layout(conf_thresh, labelList, plotly_umap, lineGraph, video_path):
+def create_main_layout(conf_thresh, labelList, plotly_umap, lineGraph, graph1, graph2, graph3, video_path):
     return html.Div([
         html.H1("Correct Auto Labeled Data"),
         html.Div([
@@ -184,15 +184,15 @@ def create_main_layout(conf_thresh, labelList, plotly_umap, lineGraph, video_pat
         html.Br(),
         html.Div([
             html.Div([
-                dcc.Graph(id='graph1', figure=px.line())
+                dcc.Graph(id='graph1', figure=graph1)
             ], className="four columns"),
 
             html.Div([
-                dcc.Graph(id='graph2', figure=px.line())
+                dcc.Graph(id='graph2', figure=graph2)
             ], className= "four columns"),
 
             html.Div([
-                dcc.Graph(id='graph3', figure=px.line())
+                dcc.Graph(id='graph3', figure=graph3)
             ], className="four columns"),
         ], className="row"),
         dcc.Store(id='store_data', data = None, storage_type='memory'),
@@ -220,7 +220,10 @@ def create_main_layout(conf_thresh, labelList, plotly_umap, lineGraph, video_pat
 # Main layout function with request check
 def layout():
     if flask.has_request_context():
-        print("correct_autolabels ran")
+        global new_model, new_np, orig_df, df, labelList, video_start_time, config, window_size, step, testModel, label_num_dict, colorList, colorDict, base_color_map, num_to_label_dict
+        global cols, valid_features, offset, features_to_omit, windows, conf_thresh, embedding_df, embedding, umap_to_ts_mapping, predicted_labels, predictions, npInput, npInput_labels
+        global modified_indices
+
         working_dir = os.getcwd()
 
         # necessary data loaded
@@ -251,7 +254,7 @@ def layout():
         # 5. cols
         orig_df = pd.read_csv('assets/auto_label_df.csv')
         df = pd.read_csv('assets/auto_label_df.csv')
-
+        print(df.head())
         # Create a temporary column for the rounded datetimes
         df['temp_datetime'] = pd.to_datetime(df['datetime']).dt.round('s')
         labelListDF = pd.read_csv('assets/label_list.csv')
@@ -310,24 +313,8 @@ def layout():
         # Invert the label_num_dict to map from numeric codes to string labels
         num_to_label_dict = {v: k for k, v in label_num_dict.items()}
 
-        def nearestNeighbor(embedding, pointIndex, y):
-            min_o =  math.inf
-            min_c = math.inf
-            nearest_neighbor = None
-            point_loc = embedding[pointIndex]
-            n_color = pointIndex
-            for i in range(len(embedding)):
-                distance = pow(pow(point_loc[0] - embedding[i][0], 2) + pow(point_loc[1] - embedding[i][1] , 2), 0.5)
-                if distance < min_c and distance != 0 and y[i] == y[pointIndex]:
-                    n_color = i
-                    min_c = distance
-                if distance < min_o and distance != 0:
-                    n_overall = i
-                    min_o = distance
-            return n_overall, n_color
-
         load_figure_template("bootstrap")
-
+               
         npInput = new_np.y
         # Map npInput numeric codes to string labels
         npInput_labels = np.array([num_to_label_dict[code] for code in npInput])
@@ -338,7 +325,43 @@ def layout():
 
         lineGraph = go.Figure()
         plotly_umap = px.scatter()
-        return create_main_layout(conf_thresh, labelList, plotly_umap, lineGraph, video_path)
+        graph1 = px.scatter()
+        graph2 = px.scatter()
+        graph3 = px.scatter()
+
+        embedding_df, embedding, umap_to_ts_mapping, predicted_labels = rerender_umap_and_update_df(predictions, df, windows, num_to_label_dict, base_color_map)
+
+        flag_low_confidence_windows(df, predictions, windows, conf_thresh, modified_indices=modified_indices)
+        update_dataframe_with_predictions(df, predictions, umap_to_ts_mapping, num_to_label_dict)
+
+        # initialize plots
+        plotly_umap = px.scatter(
+            embedding_df, 
+            x='x', 
+            y='y', 
+            color=npInput_labels,
+            hover_name=npInput_labels,
+            color_discrete_map=color_discrete_map,
+            custom_data=['index']
+        )
+        plotly_umap.update_layout(
+            autosize=False,
+            legend_title_text="Class",
+            xaxis=dict(scaleanchor='y', scaleratio=1),
+            yaxis=dict(scaleanchor='x',scaleratio=1,),
+            xaxis_title=None, yaxis_title=None,
+        )
+
+        # Create a new figure
+        lineGraph = create_time_series_figure(valid_features, cols, df)
+
+        update_timeseries_plot_with_flags(df, lineGraph)
+        update_umap_plot_with_flags(embedding_df, plotly_umap)
+
+        # WHAT NEEDS TO BE STORED
+        # df, embedding_df, predictions, npInput_labels, npInput
+
+        return create_main_layout(conf_thresh, labelList, plotly_umap, lineGraph, graph1, graph2, graph3, video_path)
     else:
         return html.Div()  # Minimal layout when not properly requested
 
@@ -730,6 +753,22 @@ def highlight_umap_point(umap_fig, selected_index, nearest_overall_index, neares
 
     return umap_fig
 
+def nearestNeighbor(embedding, pointIndex, y):
+    min_o =  math.inf
+    min_c = math.inf
+    nearest_neighbor = None
+    point_loc = embedding[pointIndex]
+    n_color = pointIndex
+    for i in range(len(embedding)):
+        distance = pow(pow(point_loc[0] - embedding[i][0], 2) + pow(point_loc[1] - embedding[i][1] , 2), 0.5)
+        if distance < min_c and distance != 0 and y[i] == y[pointIndex]:
+            n_color = i
+            min_c = distance
+        if distance < min_o and distance != 0:
+            n_overall = i
+            min_o = distance
+    return n_overall, n_color
+    
 def highlight_time_series_window(plot_fig, selected_id, df, new_np, embedding, npInput):
     selected_style = {'fillcolor': "grey", 'opacity': 0.5, 'line': {'color': 'white', 'width': 2}}
     nearest_overall_style = {'fillcolor': "red", 'opacity': 0.5, 'line': {'color': 'white', 'width': 2}}
@@ -984,6 +1023,9 @@ def update_app(umap_clickData, plot_clickData, graph1_clickData, graph2_clickDat
     plot_fig = create_time_series_figure(valid_features, cols, df)
     update_timeseries_plot_with_flags(df, plot_fig)
     umap_fig.update_layout(autosize=False, xaxis_title=None, yaxis_title=None, legend_title_text="Class")
+    graph1 = px.scatter()
+    graph2 = px.scatter()
+    graph3 = px.scatter()
 
     # TO DO: BUG FIX
     # reset params
