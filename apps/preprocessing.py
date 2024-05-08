@@ -321,7 +321,7 @@ def save_configuration(n_clicks, selected_features, plot_features, all_options, 
         "features_to_plot": plot_features,
         "video_path": video_url,
         "offset_manual": offset,
-        "preprocessing_completed": True  # Set preprocessing to completed
+        "can_access_manual_labeling": True  # Set preprocessing to completed
     })
 
     # Save the updated configuration back to the JSON file

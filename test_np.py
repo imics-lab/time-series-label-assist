@@ -78,3 +78,7 @@ predictions, labeledDf = labelDf(df, np_labeling.mapping, testModel.model, np_la
 
 print(np_labeling.y)
 print(labeledDf.head())
+
+with open(os.path.join('assets', 'time_series_processed_data.pkl'), 'rb') as file:
+    test = pickle.load(file)
+print(test.y)

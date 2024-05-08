@@ -19,7 +19,7 @@
     ],
     "video_path": "assets\\manual_video_sub1_sit_stand.mp4",
     "offset_manual": 0,
-    "model_path": "prediction/models/1D_CNN.h5",
-    "dimensions_path": "prediction/dimensions/1D_CNN.csv",
+    "model_path": "prediction/models/TWristAR.h5",
+    "dimensions_path": "prediction/dimensions/TWristAR.csv",
     "conf_thresh": 0.9
 }

@@ -127,6 +127,7 @@ def build_and_train_model(n_clicks, window_size, steps, model_name):
 
     config['model_path'] = model_path.replace('\\', '/')
     config['dimensions_path'] = dimensions_path.replace('\\', '/')
+    config['can_access_prediction'] = True
     with open(config_path, 'w') as file:
         json.dump(config, file, indent=4)
 

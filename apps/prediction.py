@@ -205,7 +205,7 @@ def predict_labels(n_clicks, window_size, steps, confidence_threshold, model_nam
         np_labeling = split.TimeSeriesNP(window_size, steps)
         print("Label list used:\n", labelList)
         np_labeling.setArrays(df, encode=True, one_hot_encode=False, labels=labelList, filter=False)
-
+        print(np_labeling.y)
         testModel = model.CNN()
         testModel.setModel(model_loaded)
         testModel.only_test_data(np_labeling.x, np_labeling.y)
@@ -222,7 +222,7 @@ def predict_labels(n_clicks, window_size, steps, confidence_threshold, model_nam
 
         with open(file_path, 'wb') as f:
             pickle.dump(np_labeling, f)   
-                 
+
         labeled_file_path = os.path.join('', "assets", 'auto_label_df.csv')
         # Check if there's a datetime column in your DataFrame
         if 'datetime' in labeledDf.columns:
@@ -261,6 +261,23 @@ def predict_labels(n_clicks, window_size, steps, confidence_threshold, model_nam
         labeled_file_path = os.path.join("assets", 'auto_label_df.csv')
         labeledDf.to_csv(labeled_file_path, index=True)
         print(f"Updated dataset saved to {labeled_file_path}")
+
+        # Load existing configuration from file
+        config_path = 'config.json'
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as file:
+                config = json.load(file)
+        else:
+            config = {}
+
+        # Update configuration with new values
+        config.update({
+            "can_access_correct_autolabels": True  # 
+        })
+
+        # Save the updated configuration back to the JSON file
+        with open(config_path, 'w') as file:
+            json.dump(config, file, indent=4)
 
         return html.Div([
             html.H5("Label Mapping:"),

@@ -300,6 +300,24 @@ def save_csv(n_clicks, jsonified_df):
     if n_clicks > 0:
         df = pd.read_json(jsonified_df, orient='split')
         df.to_csv('assets/manual_label_df.csv', index=False)
+
+        # Load existing configuration from file
+        config_path = 'config.json'
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as file:
+                config = json.load(file)
+        else:
+            config = {}
+
+        # Update configuration with new values
+        config.update({
+            "can_access_model_training": True  # 
+        })
+
+        # Save the updated configuration back to the JSON file
+        with open(config_path, 'w') as file:
+            json.dump(config, file, indent=4)
+
         return 'Data saved as CSV'
     return ''
 
