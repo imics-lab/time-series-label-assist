@@ -38,41 +38,6 @@ from prediction import split, model
 import umap
 
 ############################################################################################################################################################
-# TOP LEVEL CODE
-# embedding_df, embedding, umap_to_ts_mapping, predicted_labels = rerender_umap_and_update_df(predictions, df, windows, num_to_label_dict, base_color_map)
-
-# flag_low_confidence_windows(df, predictions, windows, conf_thresh, modified_indices=modified_indices)
-# update_dataframe_with_predictions(df, predictions, umap_to_ts_mapping, num_to_label_dict)
-
-# # initialize plots
-# plotly_umap = px.scatter(
-#     embedding_df, 
-#     x='x', 
-#     y='y', 
-#     color=npInput_labels,
-#     hover_name=npInput_labels,
-#     color_discrete_map=color_discrete_map,
-#     custom_data=['index']
-# )
-# plotly_umap.update_layout(
-#     autosize=False,
-#     legend_title_text="Class",
-#     xaxis=dict(scaleanchor='y', scaleratio=1),
-#     yaxis=dict(scaleanchor='x',scaleratio=1,),
-#     xaxis_title=None, yaxis_title=None,
-# )
-
-# graph1 = px.scatter()
-# graph2 = px.scatter()
-# graph3 = px.scatter()
-
-# # Create a new figure
-# lineGraph = create_time_series_figure(valid_features, cols, df)
-
-# update_timeseries_plot_with_flags(df, lineGraph)
-# update_umap_plot_with_flags(embedding_df, plotly_umap)
-
-
 # external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 ############################################################################################################################################################
 
@@ -254,7 +219,7 @@ def layout():
         # 5. cols
         orig_df = pd.read_csv('assets/auto_label_df.csv')
         df = pd.read_csv('assets/auto_label_df.csv')
-        print(df.head())
+
         # Create a temporary column for the rounded datetimes
         df['temp_datetime'] = pd.to_datetime(df['datetime']).dt.round('s')
         labelListDF = pd.read_csv('assets/label_list.csv')
@@ -283,8 +248,8 @@ def layout():
         video_path = config["video_path"]
 
         #6. window size
-        window_size = 96
-        step = 96
+        window_size = config["window-and-step-size"]
+        step = config["window-and-step-size"]
 
         timestamps = pd.to_datetime(df['datetime'])
         windows = [(timestamps[i], timestamps[min(i + window_size - 1, len(timestamps) - 1)]) for i in range(0, len(timestamps), window_size) if i + window_size <= len(timestamps)]

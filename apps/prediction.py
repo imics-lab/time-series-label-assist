@@ -100,7 +100,7 @@ def labelDf(df, labels_dict, model, npObject):
 
     return predictions, labeledDf
 
-def update_config(confidence_threshold):
+def update_config(confidence_threshold, window_step_size):
     config_path = os.path.join('', 'config.json')
     try:
         with open(config_path, 'r') as file:
@@ -108,6 +108,7 @@ def update_config(confidence_threshold):
     except FileNotFoundError:
         config = {}
 
+    config['window-and-step-size'] = window_step_size
     config['conf_thresh'] = confidence_threshold
     config['can_access_correct_autolabels'] = True
     
@@ -186,7 +187,7 @@ def load_video(contents, filename):
 def predict_labels(n_clicks, window_size, steps, confidence_threshold, model_name):
     if n_clicks > 0:
         # Update the configuration file with the new confidence threshold
-        update_config(confidence_threshold)
+        update_config(confidence_threshold, window_step_size=window_size)
 
         # Load the model
         model_path = os.path.join("prediction", "models", model_name)
@@ -206,7 +207,6 @@ def predict_labels(n_clicks, window_size, steps, confidence_threshold, model_nam
         np_labeling = split.TimeSeriesNP(window_size, steps)
         print("Label list used:\n", labelList)
         np_labeling.setArrays(df, encode=True, one_hot_encode=False, labels=labelList, filter=False)
-        print(np_labeling.y)
         
         testModel = model.CNN()
         testModel.setModel(model_loaded)
@@ -230,7 +230,6 @@ def predict_labels(n_clicks, window_size, steps, confidence_threshold, model_nam
             labeledDf = labeledDf.rename(columns={'pred_labels': 'label'})
 
         np_labeling.setArrays(labeledDf, encode=True, one_hot_encode=False, labels=labelList, filter=False)
-        print(np_labeling.y)
 
         # Define a path to the assets directory
         prediction_directory = 'prediction'
