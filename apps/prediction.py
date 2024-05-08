@@ -1,4 +1,5 @@
 from dash import html
+import dash_bootstrap_components as dbc
 
 # preprocessing + data upload
 # show predictions
@@ -35,45 +36,55 @@ def layout():
         model_select_component = html.Div("Model directory not found.")
 
     return html.Div([
-        html.Label('Select or Upload Model'),
-        model_select_component,
-        html.Button('Submit Selection', id='submit-model', n_clicks=0),
+        html.H3('Upload and Predict Interface'),
+        html.H5('Select or Upload Model'),
+        dbc.Row([
+            dbc.Col(model_select_component, width=12),
+            dbc.Col(dbc.Button('Submit Selection', id='submit-model', n_clicks=0, className='btn-primary'), width=12)
+        ]),
         html.Div(id='model-submit-output'),
 
-        html.Label('Upload dataset you wish to have labeled'),
+        html.H5('Upload dataset you wish to have labeled'),
         dcc.Upload(
             id='upload-data',
-            children=html.Button('Upload Data'),
+            children=dbc.Button('Upload Data', className='btn-secondary'),
             style={
                 'width': '100%', 'height': '60px', 'lineHeight': '60px',
                 'borderWidth': '1px', 'borderStyle': 'dashed', 'borderRadius': '5px',
                 'textAlign': 'center', 'margin': '10px'
             },
-            multiple=False  # Allow only one file to be uploaded
+            multiple=False
         ),
         html.Div(id='dataset-load-output'),
 
-        html.Label('Upload video data'),
+        html.H5('Upload video data'),
         dcc.Upload(
             id='upload-video',
-            children=html.Button('Upload Video'),
+            children=dbc.Button('Upload Video', className='btn-secondary'),
             style={
                 'width': '100%', 'height': '60px', 'lineHeight': '60px',
                 'borderWidth': '1px', 'borderStyle': 'dashed', 'borderRadius': '5px',
                 'textAlign': 'center', 'margin': '10px'
             },
-            multiple=False  # Allow only one video to be uploaded
+            multiple=False
         ),
         html.Div(id='video-load-output'),
 
-        html.Label('Enter Window Size:'),
-        dcc.Input(id='window-size-pred', type='number', value=96, placeholder='Window Size'),
-        html.Label('Enter Steps:'),
-        dcc.Input(id='steps-pred', type='number', value=96, placeholder='Steps'),
-        html.Label('Enter Confidence Threshold:'),
-        dcc.Input(id='confidence-threshold', type='number', value=0.90, placeholder='Confidence Threshold'),
-
-        html.Button('Predict Labels', id='predict-labels-button', n_clicks=0),
+        dbc.Row([
+            dbc.Col(html.Div([
+                html.Label('Enter Window Size:'),
+                dbc.Input(id='window-size-pred', type='number', value=96, placeholder='Window Size', className='mb-2')
+            ]), width=4),
+            dbc.Col(html.Div([
+                html.Label('Enter Steps:'),
+                dbc.Input(id='steps-pred', type='number', value=96, placeholder='Steps', className='mb-2')
+            ]), width=4),
+            dbc.Col(html.Div([
+                html.Label('Enter Confidence Threshold:'),
+                dbc.Input(id='confidence-threshold', type='number', value=0.90, placeholder='Confidence Threshold', className='mb-2')
+            ]), width=4)
+        ]),
+        dbc.Button('Predict Labels', id='predict-labels-button', n_clicks=0, className='btn-success mt-3'),
         html.Div(id='prediction-output')
     ])
 

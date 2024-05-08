@@ -27,8 +27,11 @@ def initialize_config():
         "can_access_prediction": False,
         "can_access_correct_autolabels": False
     }
-    # Ensure the directory for the configuration file exists
-    os.makedirs(os.path.dirname(config_path), exist_ok=True)
+
+    # Determine the directory path and ensure it exists
+    config_directory = os.path.dirname(config_path)
+    if config_directory != '':  # Check if the directory string is non-empty
+        os.makedirs(config_directory, exist_ok=True)
 
     if os.path.exists(config_path):
         with open(config_path, 'r') as file:

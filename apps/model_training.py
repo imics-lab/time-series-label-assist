@@ -18,25 +18,37 @@ import json
 import csv
 import io
 import sys
+import dash_bootstrap_components as dbc
 
 def layout():
     if not flask.request:
         return html.Div()
     else:
         return html.Div([
-            html.Label('Specifications for length of timesteps: i.e. (highest_frequency * seconds) MUST BE SAME'),
-            dcc.Input(id='window-size', type='number', value=96, placeholder='Window Size'),
-            dcc.Input(id='steps', type='number', value=96, placeholder='Steps'),
-            html.Button('Update Model Training Parameters', id='update-params'),
-            html.Div(id='param-output'),
-            
-            html.Label('Name your model if you want to save it'),
-            dcc.Input(id='model-name', type='text', value='1D_CNN', placeholder='Model Name'),
-            
-            html.Button('Build and Train Model', id='build-train'),
-            html.Div(id='model-output'),
-            
-            html.Div(id='button-output')
+            html.H3('Model Configuration and Training'),
+            html.H5('Set Time-Series Data Parameters'),
+
+            dbc.Row([
+                dbc.Col([
+                    html.Label('Specifications for length of timesteps (e.g., highest_frequency * seconds):'),
+                    dcc.Input(id='window-size', type='number', value=96, placeholder='Window Size', className='mb-2'),
+                    dcc.Input(id='steps', type='number', value=96, placeholder='Steps', className='mb-2'),
+                    dbc.Button('Update Model Training Parameters', id='update-params', className='mb-3'),
+                    html.Div(id='param-output', style={'marginBottom': '20px'}),
+                ], width=6),
+            ], style={'marginBottom': '20px'}),
+
+            dbc.Row([
+                dbc.Col([
+                    html.H5('Model Saving Options'),
+                    html.Div([
+                        html.Label('Name your model:'),
+                        dcc.Input(id='model-name', type='text', value='1D_CNN', placeholder='Model Name', className='mb-2'),
+                        dbc.Button('Build and Train Model', id='build-train', className='mt-2 mb-2'),
+                    ]),
+                    html.Div(id='model-output', style={'marginBottom': '20px'}),
+                ], width=6),
+            ], style={'marginBottom': '20px'}),
         ])
 
 @callback(
@@ -142,6 +154,7 @@ def build_and_train_model(n_clicks, window_size, steps, model_name):
     return html.Div([
         html.H5(f"Model {model_name} built and trained."),
         html.H6("Model and dimensions saved."),
+        html.Pre("Model summary here..."),
         html.Pre(model_summary_str)  # Display model summary
     ])
 

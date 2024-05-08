@@ -1,8 +1,8 @@
 {
-    "can_access_manual_labeling": true,
-    "can_access_model_training": true,
-    "can_access_prediction": true,
-    "can_access_correct_autolabels": true,
+    "can_access_manual_labeling": false,
+    "can_access_model_training": false,
+    "can_access_prediction": false,
+    "can_access_correct_autolabels": false,
     "valid_features": [
         "accel_ttl"
     ],
