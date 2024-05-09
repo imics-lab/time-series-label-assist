@@ -1,6 +1,7 @@
 *.mp4
 
 assets/
+storage/
 
 __pycache__
 

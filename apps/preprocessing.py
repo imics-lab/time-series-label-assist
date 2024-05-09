@@ -329,8 +329,8 @@ def save_configuration(n_clicks, selected_features, plot_features, all_options, 
         json.dump(config, file, indent=4)
     
     # Save the DataFrame and labels to CSV files
-    df_path = os.path.join('assets', 'manual_label_df.csv')
-    labels_path = os.path.join('assets', 'label_list.csv')
+    df_path = os.path.join('storage', 'manual_label_df.csv')
+    labels_path = os.path.join('storage', 'label_list.csv')
     df.to_csv(df_path, index=False)
     labels_df.to_csv(labels_path, index=False)
 

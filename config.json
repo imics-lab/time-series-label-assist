@@ -1,25 +1,3 @@
 {
-    "can_access_manual_labeling": true,
-    "can_access_model_training": true,
-    "can_access_prediction": true,
-    "can_access_correct_autolabels": true,
-    "valid_features": [
-        "accel_ttl",
-        "accel_z",
-        "accel_y",
-        "accel_x"
-    ],
-    "features_to_omit": [
-        "datetime",
-        "label",
-        "sub"
-    ],
-    "features_to_plot": [
-        "accel_ttl"
-    ],
-    "video_path": "assets\\manual_video_sub1_sit_stand.mp4",
-    "offset_manual": 0,
-    "model_path": "prediction/models/1D_CNN.h5",
-    "dimensions_path": "prediction/dimensions/1D_CNN.csv",
-    "conf_thresh": 0.9
+
 }

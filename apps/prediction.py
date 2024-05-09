@@ -135,12 +135,12 @@ def update_config(confidence_threshold, window_step_size):
 def submit_model_selection(n_clicks, selected_model):
     if n_clicks > 0:
         selected_model_path = os.path.join("prediction", "models", selected_model)
-        assets_dir = "assets"
+        assets_dir = "storage"
         if os.path.isfile(selected_model_path) and os.path.isdir(assets_dir):
             shutil.copy(selected_model_path, assets_dir)
-            return f"Model copied to assets directory."
+            return f"Model copied to storage directory."
         else:
-            return "Model not found or assets directory does not exist."
+            return "Model not found or storage directory does not exist."
 
 @callback(
     Output('dataset-load-output', 'children'),
@@ -155,7 +155,7 @@ def load_dataset(contents, filename):
         try:
             if filename.endswith('.csv'):
                 df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
-                save_path = os.path.join("assets", "auto_label_df.csv")
+                save_path = os.path.join("storage", "auto_label_df.csv")
                 df.to_csv(save_path, index=False)
                 return f"Dataset loaded and saved to {save_path}"
             else:
@@ -205,9 +205,9 @@ def predict_labels(n_clicks, window_size, steps, confidence_threshold, model_nam
         model_loaded = load_model(model_path)
 
         # Load and prepare the data
-        data_path = os.path.join("assets", "auto_label_df.csv")
+        data_path = os.path.join("storage", "auto_label_df.csv")
         df = pd.read_csv(data_path)
-        label_list_path = os.path.join("assets", "label_list.csv")
+        label_list_path = os.path.join("storage", "label_list.csv")
         labelList = pd.read_csv(label_list_path)
         labelList = list(labelList)
 
@@ -243,7 +243,7 @@ def predict_labels(n_clicks, window_size, steps, confidence_threshold, model_nam
         np_labeling.setArrays(labeledDf, encode=True, one_hot_encode=False, labels=labelList, filter=False)
 
         # Define a path to the assets directory
-        prediction_directory = 'prediction'
+        prediction_directory = 'storage'
         if not os.path.exists(prediction_directory):
             os.makedirs(prediction_directory)
 
@@ -252,7 +252,7 @@ def predict_labels(n_clicks, window_size, steps, confidence_threshold, model_nam
         with open(file_path, 'wb') as f:
             pickle.dump(np_labeling, f)   
 
-        labeled_file_path = os.path.join('', "assets", 'auto_label_df.csv')
+        labeled_file_path = os.path.join('', "storage", 'auto_label_df.csv')
         # Check if there's a datetime column in your DataFrame
         if 'datetime' in labeledDf.columns:
             labeledDf.to_csv(labeled_file_path, index=False)
@@ -261,7 +261,7 @@ def predict_labels(n_clicks, window_size, steps, confidence_threshold, model_nam
             labeledDf.to_csv(labeled_file_path, index=False)
         print(f"Updated dataset saved to {labeled_file_path}")
 
-        labeled_array_file_path = os.path.join('', "assets", "predictions.npy")
+        labeled_array_file_path = os.path.join('', "storage", "predictions.npy")
         np.save(labeled_array_file_path, predictions)
         print(f"NumPy predictions array saved to {labeled_array_file_path}")        
 
@@ -273,7 +273,7 @@ def predict_labels(n_clicks, window_size, steps, confidence_threshold, model_nam
         ]
 
         # Save updated DataFrame
-        labeled_file_path = os.path.join("assets", 'auto_label_df.csv')
+        labeled_file_path = os.path.join("storage", 'auto_label_df.csv')
         labeledDf.to_csv(labeled_file_path, index=True)
         print(f"Updated dataset saved to {labeled_file_path}")
 

@@ -19,8 +19,9 @@ def layout():
 
     # Set up paths and load configuration
     assets_dir = os.path.join(os.getcwd(), "assets")
-    df = pd.read_csv(os.path.join(assets_dir, 'manual_label_df.csv'))
-    labelListDF = pd.read_csv(os.path.join(assets_dir, 'label_list.csv'))
+    storage_dir = os.path.join(os.getcwd(), "storage")
+    df = pd.read_csv(os.path.join(storage_dir, 'manual_label_df.csv'))
+    labelListDF = pd.read_csv(os.path.join(storage_dir, 'label_list.csv'))
     labelList = list(labelListDF)
 
     config_path = os.path.join('', 'config.json')
@@ -330,7 +331,7 @@ def update_confidence_degree(confidence_value):
 def save_csv(n_clicks, jsonified_df):
     if n_clicks > 0:
         df = pd.read_json(jsonified_df, orient='split')
-        df.to_csv('assets/manual_label_df.csv', index=False)
+        df.to_csv('storage/manual_label_df.csv', index=False)
 
         # Load existing configuration from file
         config_path = 'config.json'
@@ -383,7 +384,7 @@ def calculate_sync_point(df, offset, timestamp):
     
     # Drop the 'timedelta' column from the DataFrame
     df.drop(columns='timedelta', inplace=True)
-        
+
     return formatted_sync_time
 
 @callback(

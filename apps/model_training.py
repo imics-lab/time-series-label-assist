@@ -61,8 +61,8 @@ def update_parameters(n_clicks, window_size, steps):
     if n_clicks is None:
         raise PreventUpdate
     # Load and preprocess data here, similar to your notebook
-    df = pd.read_csv('assets/manual_label_df.csv')
-    labelListDF = pd.read_csv('assets/label_list.csv')
+    df = pd.read_csv('storage/manual_label_df.csv')
+    labelListDF = pd.read_csv('storage/label_list.csv')
     labelList = list(labelListDF)
 
     # if has confidence, drop it.
@@ -74,7 +74,7 @@ def update_parameters(n_clicks, window_size, steps):
     new_np.setArrays(new_df, encode=True, one_hot_encode=False, labels=labelList)
 
     # Define a path to the assets directory
-    prediction_directory = 'prediction'
+    prediction_directory = 'storage'
     if not os.path.exists(prediction_directory):
         os.makedirs(prediction_directory)
 
@@ -98,7 +98,7 @@ def build_and_train_model(n_clicks, window_size, steps, model_name):
         raise PreventUpdate
     
     # Define a path to the assets directory
-    prediction_directory = 'prediction'
+    prediction_directory = 'storage'
     if not os.path.exists(prediction_directory):
         os.makedirs(prediction_directory)
 

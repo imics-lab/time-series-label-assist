@@ -195,9 +195,9 @@ def layout():
         # 1. model_select.value
         # Path to the assets directory
         assets_dir = os.path.join(working_dir, "assets")
-
+        storage_dir = os.path.join(working_dir, "storage")
         # Search for .h5 files in the assets directory
-        model_files = glob.glob(os.path.join(assets_dir, '*.h5'))
+        model_files = glob.glob(os.path.join(storage_dir, '*.h5'))
 
         # Check if any .h5 files were found
         if model_files:
@@ -207,22 +207,22 @@ def layout():
             #new_model = tf.keras.saving.load_model(model_path)
             print(f"Model loaded from: {model_path}")
         else:
-            print("No .h5 model files found in the assets directory.")
+            print("No .h5 model files found in the storage directory.")
 
         # 2. new_np
         # Loading the new_np object
-        with open(os.path.join('prediction', 'np_auto_labeling.pkl'), 'rb') as file:
+        with open(os.path.join('storage', 'np_auto_labeling.pkl'), 'rb') as file:
             new_np = pickle.load(file)
 
         # 3. df
         # 4. labelList
         # 5. cols
-        orig_df = pd.read_csv('assets/auto_label_df.csv')
-        df = pd.read_csv('assets/auto_label_df.csv')
+        orig_df = pd.read_csv('storage/auto_label_df.csv')
+        df = pd.read_csv('storage/auto_label_df.csv')
 
         # Create a temporary column for the rounded datetimes
         df['temp_datetime'] = pd.to_datetime(df['datetime']).dt.round('s')
-        labelListDF = pd.read_csv('assets/label_list.csv')
+        labelListDF = pd.read_csv('storage/label_list.csv')
         labelList = list(labelListDF)
 
         # video's start time for calculating offsets (TO DO: FROM CONFIG)
@@ -1190,18 +1190,28 @@ def update_app(umap_clickData, plot_clickData, graph1_clickData, graph2_clickDat
 @callback(
     Output('save_status', 'children'),
     [Input('save_changes_button', 'n_clicks')],
+    State('store_data', 'data'),  # Ensure you have the current state of the data
     prevent_initial_call=True
 )
-def save_changes(n_clicks):
-    if n_clicks > 0:  # Check if the button has been clicked
+def save_changes(n_clicks, data):
+    if n_clicks > 0:
         try:
-            # Attempt to save the updated 'new_np' object. Ensure 'new_np' is accessible.
-            with open(os.path.join('assets', 'time_series_processed_data.pkl'), 'wb') as file:
-                pickle.dump(new_np, file)
-            return 'Changes saved successfully!'  # Update the component with a success message
+            # Saving the updated 'new_np' object # relevant for retraining
+            # with open(os.path.join('labeled_data', 'time_series_processed_data.pkl'), 'wb') as file:
+            #     pickle.dump(data['new_np'], file)  
+            
+            # Saving the DataFrame
+            df_path = os.path.join('labeled_data', 'labeled_data.csv')  # Default save location
+            # Columns to drop
+            columns_to_drop = ['temp_datetime', 'PredictedLabel', 'window_id', 'flagged', 'confidence', 'flag_change']
+            # Dropping the columns
+            df.drop(columns=columns_to_drop, inplace=True)
+            df.to_csv(df_path, index=False)
+
+            return 'Changes and data saved successfully!'
         except Exception as e:
-            return f'Error saving changes: {e}'  # Update the component with an error message
-    return ''  # Initial or default state with no message
+            return f'Error saving changes: {e}'
+    return ''
 
 # checkbox for auto fill start end datetime selection on manual graph callbacks
 @callback(
