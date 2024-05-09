@@ -48,6 +48,10 @@ def layout():
                     ]),
                     html.Div(id='model-output', style={'marginBottom': '20px'}),
                 ], width=6),
+                dbc.Col([
+                    dbc.Button("Skip Training", id="skip-training", color="warning", className="mb-2"),
+                    html.Div(id="skip-output", style={"color": "green"})
+                ])
             ], style={'marginBottom': '20px'}),
         ])
 
@@ -158,3 +162,26 @@ def build_and_train_model(n_clicks, window_size, steps, model_name):
         html.Pre(model_summary_str)  # Display model summary
     ])
 
+@callback(
+    Output('skip-output', 'children'),
+    [Input('skip-training', 'n_clicks')],
+    prevent_initial_call=True
+)
+def skip_training(n_clicks):
+    if n_clicks is None:
+        raise PreventUpdate
+
+    # Simulate updating configuration to allow prediction access
+    config_path = 'config.json'
+    if os.path.exists(config_path):
+        with open(config_path, 'r') as file:
+            config = json.load(file)
+    else:
+        config = {}
+
+    config['can_access_prediction'] = True  # Set the access to prediction to True
+
+    with open(config_path, 'w') as file:
+        json.dump(config, file, indent=4)
+
+    return "You can now proceed to the prediction interface. No model training is required."

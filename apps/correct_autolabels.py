@@ -6,7 +6,8 @@ import flask
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.subplots
-
+import dash_bootstrap_components as dbc
+from dash_bootstrap_components import Row, Col, Button, Tooltip, InputGroup, Form
 import dash
 from dash import ctx
 from dash import dcc, html, callback
@@ -43,144 +44,99 @@ import umap
 
 # Function to create the main layout
 def create_main_layout(conf_thresh, labelList, plotly_umap, lineGraph, graph1, graph2, graph3, video_path):
-    return html.Div([
+    return dbc.Container([
         html.H1("Correct Auto Labeled Data"),
-        html.Div([
-            # Section for UMAP parameters
-            html.Div([
-                dcc.Markdown("**Adjust Parameters for UMAP:**"),
+        dbc.Row([
+            dbc.Col(dcc.Graph(id='umap-graph', figure=plotly_umap), width=8),
+            dbc.Col([
                 html.Div([
+                    dcc.Markdown("**Adjust Parameters for UMAP:**"),
                     html.Div([
-                        html.Label('Number of Neighbors:', style={'font-weight': 'bold'}),
-                        dcc.Input(
-                            id='n_neighbors_input',
-                            type='number',
-                            value=15,
-                            min=2,
-                        ),
-                    ], style={'flex': '1', 'margin-right': '10px'}),  # Third of the space
+                        dbc.Label("Number of Neighbors:", html_for="n_neighbors_input"),
+                        dbc.Input(id='n_neighbors_input', type='number', value=15, min=2),
+                    ], className="mb-3"),
                     html.Div([
-                        html.Label('Minimum Distance:', style={'font-weight': 'bold'}),
+                        dbc.Label("Minimum Distance:", html_for="min_dist_slider"),
                         dcc.Slider(
                             id='min_dist_slider',
                             min=0.01,
                             max=0.99,
                             step=0.01,
                             value=0.1,
-                            marks={i / 100: '{:.1f}'.format(i / 100) for i in range(10, 90, 10)},
-                            tooltip={"placement": "bottom", "always_visible": True}
+                            marks={i / 100: f"{i / 100:.2f}" for i in range(10, 100, 10)}
                         ),
-                    ], style={'flex': '1', 'margin-right': '10px', 'margin-left': '10px'}),  # Third of the space
+                    ], className="mb-3"),
                     html.Div([
-                        html.Label('Confidence Threshold:', style={'font-weight': 'bold'}),
+                        dbc.Label("Confidence Threshold:", html_for="confidence_threshold_slider"),
                         dcc.Slider(
                             id='confidence_threshold_slider',
                             min=0.01,
                             max=0.99,
                             step=0.01,
                             value=conf_thresh,
-                            marks={i / 100: '{:.2f}'.format(i / 100) for i in range(0, 101, 10)},
-                            tooltip={"placement": "bottom", "always_visible": True}
+                            marks={i / 100: f"{i / 100:.2f}" for i in range(0, 100, 10)}
                         ),
-                    ], style={'flex': '1', 'margin-left': '10px'}),  # Third of the space
-                ], style={'display': 'flex', 'margin-bottom': '20px'}),
-                html.Button('Update UMAP', id='submit_button', n_clicks=0, style={'width': '25%'}),
-            ], style={'padding': '20px'}),
-            
-            # Section for UMAP graph and label changing interface
-            html.Div([
-                html.Label('UMAP', style={'font-weight': 'bold'}),
-                dcc.Graph(id='umap-graph', figure=plotly_umap, style={'flex': '6'}),  # Adjusted for 80% width
+                    ], className="mb-3"),
+                    dbc.Button("Update UMAP", id='submit_button', n_clicks=0, className="btn-primary"),
+                ]),
                 html.Div([
                     dcc.Markdown("**Change Label**"),
-                    dcc.Dropdown(labelList, '', id='dropdown'),
-                    html.Button('Add Label', id='button', n_clicks=0)
-                ], style={'flex': '1', 'padding': '0px'}),  # Adjusted for 20% width
-            ], style={'display': 'flex', 'flexDirection': 'row'}),
-        ], style={'display': 'flex', 'flexDirection': 'column'}),
-        html.Hr(),
-    ################################################################################################################################################################
-        html.Br(),
-        html.Div([
-            html.Label('Time-Series Plot Controls', style={'font-weight': 'bold'}),
-            html.Br(),
-            html.Div([
-                html.Div([
-                    html.Label("Start Time:", style={'font-weight': 'bold'}),
-                    dcc.Input(id='ts-start-input', type='text', placeholder="YYYY-MM-DD HH:MM:SS"),
-                    html.Div(id='start-output')
-                ], style={'flex': '1'}),
-                html.Div([
-                    html.Label("End Time:", style={'font-weight': 'bold'}),
-                    dcc.Input(id='ts-end-input', type='text', placeholder="YYYY-MM-DD HH:MM:SS"),
-                    html.Div(id='end-output')
-                ], style={'flex': '1'}),
-                html.Div([
-                    html.Label("Change Label:", style={'font-weight': 'bold'}),
-                    dcc.Dropdown(labelList, placeholder='Select a Label', id='ts-label-selection'),
-                    html.Div(id='label-output')
-                ], style={'flex': '1'}),
-                html.Div([
-                    html.Label("Degree of Confidence:", style={'font-weight': 'bold'}),
-                    dcc.Dropdown(["High", "Medium", "Low", "Undefined"], placeholder='Select a Confidence Level', id='ts-confidence-selection'),
-                    html.Div(id='confidence-output')
-                ], style={'flex': '1'}),
-            ], style={'display': 'flex', 'flexDirection': 'row', 'alignItems': 'center', 'margin-bottom': '10px'}),
-            dcc.Checklist(
-                id='ts-fill-ui-checkbox',
-                options=[{'label': 'Fill Start/End Time with Selected Range', 'value': 'fill-ui'}],
-                value=[],
-                style={'flex': '1'}
-            ),
-            # Add Label button
-            html.Div([
-                html.Button('Add Label', id='btn-manual-label', n_clicks=0, style={'width': '25%'})
-            ], style={'flex': '1'})
+                    dcc.Dropdown(labelList, '', id='dropdown', style={'width': '100%'}),
+                    dbc.Button('Add Label', id='button', n_clicks=0, className="mt-2")
+                ], className="mt-4"),
+            ], width=4)
         ]),
-        html.Br(),
-        html.Div([
-            html.Label('Time-Series Plot', style={'font-weight': 'bold'}),
-            dcc.Graph(
-                id='plot-clicked',
-                figure = lineGraph
-            ),
-        ], ),
-
-        html.Br(),
-        html.Div([
-            html.Div([
-                dcc.Graph(id='graph1', figure=graph1)
-            ], className="four columns"),
-
-            html.Div([
-                dcc.Graph(id='graph2', figure=graph2)
-            ], className= "four columns"),
-
-            html.Div([
-                dcc.Graph(id='graph3', figure=graph3)
-            ], className="four columns"),
-        ], className="row"),
-        dcc.Store(id='store_data', data = None, storage_type='memory'),
         html.Hr(),
-    ################################################################################################################################################################
-        html.Br(),
-        html.Label('Video', style={'font-weight': 'bold'}),
-        html.Div([
-            dash_player.DashPlayer(
-                id='umap-video-player',
-                url=video_path,
-                controls=True,
-                width='100%',
-                height='400px',
-            )
+        dbc.Row([
+            dbc.Col([
+                dbc.Label("Start Time:", className="font-weight-bold"),
+                dcc.Input(id='ts-start-input', type='text', placeholder="YYYY-MM-DD HH:MM:SS"),
+                html.Div(id='start-output')
+            ], width=3),
+            dbc.Col([
+                dbc.Label("End Time:", className="font-weight-bold"),
+                dcc.Input(id='ts-end-input', type='text', placeholder="YYYY-MM-DD HH:MM:SS"),
+                html.Div(id='end-output')
+            ], width=3),
+            dbc.Col([
+                dbc.Label("Change Label:", className="font-weight-bold"),
+                dcc.Dropdown(labelList, placeholder='Select a Label', id='ts-label-selection'),
+                html.Div(id='label-output')
+            ], width=3),
+            dbc.Col([
+                dbc.Label("Degree of Confidence:", className="font-weight-bold"),
+                dcc.Dropdown(["High", "Medium", "Low", "Undefined"], placeholder='Select a Confidence Level', id='ts-confidence-selection'),
+                html.Div(id='confidence-output')
+            ], width=3),
         ]),
-        html.Button('Sync to Other Visualizations', id='vid_sync_button', n_clicks=0, style={'margin-top': '20px'}),
-        html.H5(children='''Sync Video to RAW TS EXACT:'''),
-        html.Div(children='''Plot line on data graph at current time in video.'''),
-        html.Button("Sync", id="ts-sync-vid", n_clicks=0),
-        html.Button('Save Changes', id='save_changes_button', n_clicks=0),
+        dbc.Checklist(
+            id='ts-fill-ui-checkbox',
+            options=[{'label': 'Fill Start/End Time with Selected Range', 'value': 'fill-ui'}],
+            value=[],
+            className="mt-3"
+        ),
+        dbc.Button('Add Label', id='btn-manual-label', n_clicks=0, className="mt-3"),
+        html.Label('Time-Series Plot', className="font-weight-bold"),
+        dcc.Graph(id='plot-clicked', figure=lineGraph),
+        dbc.Row([
+            dbc.Col(dcc.Graph(id='graph1', figure=graph1), width=4),
+            dbc.Col(dcc.Graph(id='graph2', figure=graph2), width=4),
+            dbc.Col(dcc.Graph(id='graph3', figure=graph3), width=4),
+            dcc.Store(id='store_data', data = None, storage_type='memory'),
+        ]),
+        html.Label('Video', className="font-weight-bold"),
+        dash_player.DashPlayer(
+            id='umap-video-player',
+            url=video_path,
+            controls=True,
+            width='100%',
+            height='400px',
+        ),
+        dbc.Button('Sync Video to Other Visualizations', id='vid_sync_button', n_clicks=0, className="mt-3"),
+        dbc.Button('Save Changes', id='save_changes_button', n_clicks=0, className="btn-danger mt-3 mb-3"),
+        dbc.Tooltip("Click to save all changes. This should be the last operation after all edits.", target="save_changes_button"),
         html.Div(id='save_status'),
-    ])
+    ], fluid=True)
 
 # Main layout function with request check
 def layout():
@@ -961,7 +917,6 @@ def update_dataframe(df, start, end, label, confidence):
         Input('submit_button', 'n_clicks'), # umap params
         Input('vid_sync_button', 'n_clicks'),
         Input('btn-manual-label', 'n_clicks'), # added input for manual label
-        Input('ts-sync-vid', 'n_clicks'), # added input for syncing video
         Input('plot-clicked', 'relayoutData') # added input for relayoutData
     ],
     [
@@ -977,7 +932,7 @@ def update_dataframe(df, start, end, label, confidence):
         State('ts-confidence-selection', 'value') # added state for confidence selection
     ] 
 )
-def update_app(umap_clickData, plot_clickData, graph1_clickData, graph2_clickData, graph3_clickData, label_n_clicks, umap_n_clicks, vid_sync_n_clicks, ts_label_n_clicks, ts_sync_vid_n_clicks, ts_relayout_data, value, data, n_neighbors, min_dist, current_time, fill_ui_value, start_input, end_input, label_selection, confidence_selection):
+def update_app(umap_clickData, plot_clickData, graph1_clickData, graph2_clickData, graph3_clickData, label_n_clicks, umap_n_clicks, vid_sync_n_clicks, ts_label_n_clicks, ts_relayout_data, value, data, n_neighbors, min_dist, current_time, fill_ui_value, start_input, end_input, label_selection, confidence_selection):
     triggered = callback_context.triggered[0]['prop_id'].split('.')[0]
     # intialize video seek time
     video_seek_time = dash.no_update
@@ -1179,18 +1134,12 @@ def update_app(umap_clickData, plot_clickData, graph1_clickData, graph2_clickDat
         update_timeseries_plot_with_flags(df, plot_fig)
         update_umap_plot_with_flags(embedding_df, umap_fig)
 
-    # TO DO:
-    # if triggered == 'ts-sync-vid':
-    #     # Logic for syncing video
-    #     # This is an assumed function
-    #     return sync_video_to_data(df, current_time)
-
     return umap_fig, plot_fig, graph1, graph2, graph3, data, video_seek_time
 
 @callback(
     Output('save_status', 'children'),
     [Input('save_changes_button', 'n_clicks')],
-    State('store_data', 'data'),  # Ensure you have the current state of the data
+    #State('store_data', 'data'),  # Ensure you have the current state of the data
     prevent_initial_call=True
 )
 def save_changes(n_clicks, data):

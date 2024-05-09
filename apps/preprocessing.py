@@ -107,6 +107,55 @@ def layout():
     ])
     return layout
 
+def initialize_config():
+    config_path = 'config.json'
+    default_config = {
+        "can_access_manual_labeling": False,
+        "can_access_model_training": False,
+        "can_access_prediction": False,
+        "can_access_correct_autolabels": False
+    }
+
+    # Ensure the storage directory is clear before initializing the configuration
+    clear_storage_directory()
+
+    # Determine the directory path and ensure it exists
+    config_directory = os.path.dirname(config_path)
+    if config_directory != '':  # Check if the directory string is non-empty
+        os.makedirs(config_directory, exist_ok=True)
+
+    if os.path.exists(config_path):
+        with open(config_path, 'r') as file:
+            existing_config = json.load(file)
+        # Merge existing configuration with defaults where specific keys are overridden
+        config = {**existing_config, **default_config}
+    else:
+        config = default_config
+
+    # Write the possibly updated configuration back to the file
+    with open(config_path, 'w') as file:
+        json.dump(config, file, indent=4)
+
+    return config
+
+def clear_storage_directory(directory='storage'):
+    """
+    Clears all files in the specified storage directory.
+    """
+    if os.path.exists(directory):
+        # Remove all files and directories in the 'directory'
+        for item in os.listdir(directory):
+            item_path = os.path.join(directory, item)
+            if os.path.isfile(item_path) or os.path.islink(item_path):
+                os.unlink(item_path)
+            elif os.path.isdir(item_path):
+                shutil.rmtree(item_path)
+        print(f"All files in '{directory}' have been removed.")
+    else:
+        # Create the directory if it does not exist
+        os.makedirs(directory, exist_ok=True)
+        print(f"Directory '{directory}' was created.")
+
 def parse_contents(contents, filename, date):
     content_type, content_string = contents.split(',')
     decoded = base64.b64decode(content_string)
@@ -129,6 +178,8 @@ def parse_contents(contents, filename, date):
         return display, df.to_json(date_format='iso', orient='split')
     except Exception as e:
         return html.Div([f'There was an error processing this file: {e}']), None
+
+initialize_config() # RESET CONFIGURATION FILE TO DEFAULTS # RESET STORAGE DIRECTORY
 
 @callback(
     Output('trigger', 'children'),
@@ -247,10 +298,10 @@ def select_all_plots(n_clicks, options):
 # Video Callback
 # Callback to handle video uploads and manage the video file
 @callback(
-    Output('video-player', 'url'),  # Updating the URL of the existing video player component
+    Output('video-player', 'url'),  # Display the video in the player
     Input('upload-video', 'contents'),
     State('upload-video', 'filename'),
-    prevent_initial_call=False
+    prevent_initial_call=True
 )
 def update_video_output(contents, filename):
     if contents is None:
@@ -263,19 +314,20 @@ def update_video_output(contents, filename):
     # Create a consistent naming for the video file
     video_filename = f"manual_video_{filename}"
     video_path = os.path.join('assets', video_filename)
-    
-    if not os.path.exists('assets'):
-        os.makedirs('assets')
-    
-    # Check if a video file exists and remove it
-    existing_files = glob.glob(os.path.join('assets', 'manual_video_*'))
-    for file in existing_files:
-        os.remove(file)
-    
-    with open(video_path, 'wb') as f:
-        f.write(decoded)
-    
+
     return video_path
+
+@callback(
+    Output('video-data', 'data'),  # Temporarily store video data
+    Input('upload-video', 'contents'),
+    State('upload-video', 'filename'),
+    prevent_initial_call=True
+)
+def store_video_contents(contents, filename):
+    if contents is None:
+        raise PreventUpdate
+    # Just store the contents and filename, don't save to disk yet
+    return {'contents': contents, 'filename': filename}
 
 # Callback to save configuration
 @callback(
@@ -286,27 +338,48 @@ def update_video_output(contents, filename):
      State('feature-columns-checkboxes', 'options'),
      State('stored-manual-df', 'data'),
      State('stored-labels', 'data'),
-     State('video-player', 'url'),
+     State('video-data', 'data'),  # Get stored video data
      State('video-data-offset', 'value')],
-    prevent_initial_call=False
+    prevent_initial_call=True
 )
-def save_configuration(n_clicks, selected_features, plot_features, all_options, stored_df_json, stored_labels_json, video_url, offset):
+def save_configuration(n_clicks, selected_features, plot_features, all_options, stored_df_json, stored_labels_json, video_data, offset):
+    initialize_config() # RESET CONFIGURATION FILE TO DEFAULTS
+
     if n_clicks is None:
         raise PreventUpdate
     
-    # Check if the DataFrame is available
+    # Process and save video data
+    if video_data:
+        content_type, content_string = video_data['contents'].split(',')
+        decoded = base64.b64decode(content_string)
+        video_filename = f"manual_video_{video_data['filename']}"
+        video_path = os.path.join('assets', video_filename)
+        
+        if not os.path.exists('assets'):
+            os.makedirs('assets')
+        
+        # Remove existing video files if any
+        existing_files = glob.glob(os.path.join('assets', 'manual_video_*'))
+        for file in existing_files:
+            os.remove(file)
+        
+        # Save the new video file
+        with open(video_path, 'wb') as f:
+            f.write(decoded)
+
+        # Use video_path in config below
+    else:
+        video_path = None  # Handle case where no video was uploaded
+
     if stored_df_json is None:
         return "No data to save."
     
-    # Load dataframes from the stored JSON
     df = pd.read_json(stored_df_json, orient='split')
     labels_df = pd.read_json(stored_labels_json, orient='split')
 
-    # Determine features to omit by comparing all options against selected features
     all_features = [option['value'] for option in all_options]
     features_to_omit = [feature for feature in all_features if feature not in selected_features]
 
-    # Load existing configuration from file
     config_path = 'config.json'
     if os.path.exists(config_path):
         with open(config_path, 'r') as file:
@@ -314,21 +387,18 @@ def save_configuration(n_clicks, selected_features, plot_features, all_options, 
     else:
         config = {}
 
-    # Update configuration with new values
     config.update({
         "valid_features": selected_features,
         "features_to_omit": features_to_omit,
         "features_to_plot": plot_features,
-        "video_path": video_url,
+        "video_path": video_path,
         "offset_manual": offset,
-        "can_access_manual_labeling": True  # Set preprocessing to completed
+        "can_access_manual_labeling": True
     })
 
-    # Save the updated configuration back to the JSON file
     with open(config_path, 'w') as file:
         json.dump(config, file, indent=4)
     
-    # Save the DataFrame and labels to CSV files
     df_path = os.path.join('storage', 'manual_label_df.csv')
     labels_path = os.path.join('storage', 'label_list.csv')
     df.to_csv(df_path, index=False)

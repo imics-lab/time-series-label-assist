@@ -1,3 +1,24 @@
 {
-
+    "can_access_manual_labeling": false,
+    "can_access_model_training": false,
+    "can_access_prediction": false,
+    "can_access_correct_autolabels": false,
+    "valid_features": [
+        "accel_ttl",
+        "accel_z",
+        "accel_y",
+        "accel_x"
+    ],
+    "features_to_omit": [
+        "datetime",
+        "label",
+        "sub"
+    ],
+    "features_to_plot": [
+        "accel_ttl"
+    ],
+    "video_path": "assets\\manual_video_sub1_sit_stand.mp4",
+    "offset_manual": 0,
+    "window-and-step-size": 96,
+    "conf_thresh": 0.9
 }

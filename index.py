@@ -22,10 +22,6 @@ app.config.prevent_initial_callbacks = True
 def initialize_config():
     config_path = 'config.json'
     default_config = {
-        "can_access_manual_labeling": False,
-        "can_access_model_training": False,
-        "can_access_prediction": False,
-        "can_access_correct_autolabels": False
     }
 
     # Determine the directory path and ensure it exists
