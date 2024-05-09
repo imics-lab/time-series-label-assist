@@ -22,6 +22,7 @@ import os
 import glob
 import json
 from datetime import datetime, timedelta
+import shutil
 
 import pandas as pd
 from pandas import Timestamp
@@ -1140,7 +1141,7 @@ def update_app(umap_clickData, plot_clickData, graph1_clickData, graph2_clickDat
 @callback(
     Output('save_status', 'children'),
     [Input('save_changes_button', 'n_clicks')],
-    #State('store_data', 'data'),  # Ensure you have the current state of the data
+    State('store_data', 'data'),  # Ensure you have the current state of the data
     prevent_initial_call=True
 )
 def save_changes(n_clicks, data):
@@ -1153,10 +1154,34 @@ def save_changes(n_clicks, data):
             # Saving the DataFrame
             df_path = os.path.join('labeled_data', 'labeled_data.csv')  # Default save location
             # Columns to drop
-            columns_to_drop = ['temp_datetime', 'PredictedLabel', 'window_id', 'flagged', 'confidence', 'flag_change']
+            columns_to_drop = ['temp_datetime', 'PredictedLabel', 'window_id', 'flagged', 'confidence', 'flag_change', 'sub']
             # Dropping the columns
             df.drop(columns=columns_to_drop, inplace=True)
             df.to_csv(df_path, index=False)
+
+            def clear_directories(directories):
+                """
+                Clears all files and subdirectories in each specified directory.
+                
+                Args:
+                directories (list of str): A list of directory paths to clear.
+                """
+                for directory in directories:
+                    if os.path.exists(directory):
+                        # Remove all files and directories in the 'directory'
+                        for item in os.listdir(directory):
+                            item_path = os.path.join(directory, item)
+                            if os.path.isfile(item_path) or os.path.islink(item_path):
+                                os.unlink(item_path)
+                            elif os.path.isdir(item_path):
+                                shutil.rmtree(item_path)
+                        print(f"All files in '{directory}' have been removed.")
+                    else:
+                        # Create the directory if it does not exist
+                        os.makedirs(directory, exist_ok=True)
+                        print(f"Directory '{directory}' was created.")
+
+            clear_directories(['storage', 'assets'])
 
             return 'Changes and data saved successfully!'
         except Exception as e:

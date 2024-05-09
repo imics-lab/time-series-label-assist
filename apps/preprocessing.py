@@ -1,4 +1,3 @@
-from utilities.data_manager import load_data, process_data
 import dash
 from dash import dcc, html, callback
 from dash.dependencies import Input, Output, State
@@ -116,9 +115,6 @@ def initialize_config():
         "can_access_correct_autolabels": False
     }
 
-    # Ensure the storage directory is clear before initializing the configuration
-    clear_storage_directory()
-
     # Determine the directory path and ensure it exists
     config_directory = os.path.dirname(config_path)
     if config_directory != '':  # Check if the directory string is non-empty
@@ -137,24 +133,6 @@ def initialize_config():
         json.dump(config, file, indent=4)
 
     return config
-
-def clear_storage_directory(directory='storage'):
-    """
-    Clears all files in the specified storage directory.
-    """
-    if os.path.exists(directory):
-        # Remove all files and directories in the 'directory'
-        for item in os.listdir(directory):
-            item_path = os.path.join(directory, item)
-            if os.path.isfile(item_path) or os.path.islink(item_path):
-                os.unlink(item_path)
-            elif os.path.isdir(item_path):
-                shutil.rmtree(item_path)
-        print(f"All files in '{directory}' have been removed.")
-    else:
-        # Create the directory if it does not exist
-        os.makedirs(directory, exist_ok=True)
-        print(f"Directory '{directory}' was created.")
 
 def parse_contents(contents, filename, date):
     content_type, content_string = contents.split(',')
@@ -298,7 +276,7 @@ def select_all_plots(n_clicks, options):
 # Video Callback
 # Callback to handle video uploads and manage the video file
 @callback(
-    Output('video-player', 'url'),  # Display the video in the player
+    Output('video-player', 'url'),
     Input('upload-video', 'contents'),
     State('upload-video', 'filename'),
     prevent_initial_call=True
@@ -307,15 +285,27 @@ def update_video_output(contents, filename):
     if contents is None:
         raise PreventUpdate
 
+    # Decode and save the video file
     content_type, content_string = contents.split(',')
     decoded = base64.b64decode(content_string)
-    _, file_extension = os.path.splitext(filename)
     
-    # Create a consistent naming for the video file
+    # Define a consistent naming for the video file
     video_filename = f"manual_video_{filename}"
     video_path = os.path.join('assets', video_filename)
 
-    return video_path
+    # Ensure the assets directory exists
+    if not os.path.exists('assets'):
+        os.makedirs('assets')
+
+    # Save the video to the assets directory
+    full_path = os.path.join('assets', video_filename)
+    with open(full_path, 'wb') as f:
+        f.write(decoded)
+
+    # Construct the URL path for the video player
+    video_url = f"/assets/{video_filename}"
+
+    return video_url
 
 @callback(
     Output('video-data', 'data'),  # Temporarily store video data
