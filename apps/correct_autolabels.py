@@ -21,6 +21,7 @@ import math
 import os
 import glob
 import json
+from datetime import datetime, timedelta
 
 import pandas as pd
 from pandas import Timestamp
@@ -180,12 +181,7 @@ def layout():
         df['temp_datetime'] = pd.to_datetime(df['datetime']).dt.round('s')
         labelListDF = pd.read_csv('storage/label_list.csv')
         labelList = list(labelListDF)
-
-        # video's start time for calculating offsets (TO DO: FROM CONFIG)
-        # first datetime = 0s last datetime = total seconds of data
-        # video_start_time = 0 + offset
-        video_start_time = datetime.strptime('2021-10-08 16:50:50', '%Y-%m-%d %H:%M:%S')
-
+        
         #cols = list(pd.read_csv('assets/feature_cols.csv'))
         # json change
         # Path to your JSON configuration
@@ -200,8 +196,13 @@ def layout():
         features_to_omit = config["features_to_omit"]
         cols = config["features_to_plot"]
         conf_thresh = config["conf_thresh"]
-        offset = config["offset_manual"]
-        video_path = config["video_path"]
+        offset = config["offset_pred"]
+        video_path = "assets/autolabel_video.mp4"
+
+        # video's start time for calculating offsets
+        # Adjusting the start time by the offset
+        initial_time = pd.to_datetime(df['datetime'].iloc[0])
+        video_start_time = initial_time + timedelta(seconds=int(offset))
 
         #6. window size
         window_size = config["window-and-step-size"]

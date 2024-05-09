@@ -5,9 +5,9 @@
     "can_access_correct_autolabels": false,
     "valid_features": [
         "accel_ttl",
-        "accel_z",
+        "accel_x",
         "accel_y",
-        "accel_x"
+        "accel_z"
     ],
     "features_to_omit": [
         "datetime",
@@ -17,8 +17,11 @@
     "features_to_plot": [
         "accel_ttl"
     ],
-    "video_path": "assets\\manual_video_sub1_sit_stand.mp4",
+    "video_path": "assets/autolabel_video.mp4",
     "offset_manual": 0,
     "window-and-step-size": 96,
-    "conf_thresh": 0.9
+    "conf_thresh": 0.9,
+    "model_path": "prediction/models/TWristAR.h5",
+    "dimensions_path": "prediction/dimensions/TWristAR.csv",
+    "offset_pred": 0
 }

@@ -1,0 +1,10 @@
+tensorflow==2.15.0
+dash==2.14.2
+dash_player==1.1.0
+dash-bootstrap-components==1.5.0
+ipywidgets==8.1.1
+pandas==2.2.0
+scikit-learn==1.4.0
+umap-learn==0.5.5
+dash-bootstrap-templates==1.1.2
+pyarrow==15.0.0

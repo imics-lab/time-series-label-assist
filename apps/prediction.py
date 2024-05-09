@@ -69,7 +69,13 @@ def layout():
             multiple=False
         ),
         html.Div(id='video-load-output'),
-
+        html.H5("Video Data Sync Offset", style={'marginBottom': '10px'}),
+        html.Div([
+            html.P([html.Strong("Zero Offset:"), " Sync Start - Video and data begin together."]),
+            html.P([html.Strong("Positive Offset:"), " Video Delay - Start video [offset] seconds after data."]),
+            html.P([html.Strong("Negative Offset:"), " Data Delay - Start data [offset] seconds after video."]),
+            dbc.Input(id='video-data-offset', type='number', placeholder="Enter offset in seconds...", step=1, style={'marginBottom': '10px'}),
+        ], style={'marginBottom': '20px'}),
         dbc.Row([
             dbc.Col(html.Div([
                 html.Label('Enter Window Size:'),
@@ -111,7 +117,7 @@ def labelDf(df, labels_dict, model, npObject):
 
     return predictions, labeledDf
 
-def update_config(confidence_threshold, window_step_size):
+def update_config(confidence_threshold, window_step_size, video_data_offset):
     config_path = os.path.join('', 'config.json')
     try:
         with open(config_path, 'r') as file:
@@ -122,6 +128,7 @@ def update_config(confidence_threshold, window_step_size):
     config['window-and-step-size'] = window_step_size
     config['conf_thresh'] = confidence_threshold
     config['can_access_correct_autolabels'] = True
+    config['offset_pred'] = video_data_offset
     
     with open(config_path, 'w') as file:
         json.dump(config, file, indent=4)
@@ -193,12 +200,13 @@ def load_video(contents, filename):
     State('window-size-pred', 'value'),
     State('steps-pred', 'value'),
     State('confidence-threshold', 'value'),
+    State('video-data-offset', 'value'),  # Add this state parameter
     State('model-select', 'value')
 )
-def predict_labels(n_clicks, window_size, steps, confidence_threshold, model_name):
+def predict_labels(n_clicks, window_size, steps, confidence_threshold, video_data_offset, model_name):
     if n_clicks > 0:
         # Update the configuration file with the new confidence threshold
-        update_config(confidence_threshold, window_step_size=window_size)
+        update_config(confidence_threshold, window_size, video_data_offset)
 
         # Load the model
         model_path = os.path.join("prediction", "models", model_name)
