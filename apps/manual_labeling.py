@@ -11,7 +11,6 @@ import json
 import flask
 
 def layout():
-    print("MANUAL LABELING TRIGGERED")
     if not flask.request:
         return html.Div()
     global labelList, valid_features, features_to_omit, cols, video_path, colorDict, confDict
@@ -32,7 +31,8 @@ def layout():
     features_to_omit = config["features_to_omit"]
     cols = config["features_to_plot"]
     video_path = config["video_path"]
-    
+    global offset
+    offset = config["offset_manual"]
     # Assume undefined if confidence not in cols
     if "confidence" not in cols:
         df['confidence'] = "Undefined"
@@ -64,29 +64,6 @@ def calculate_label_indices(df):
     labelsEndIndex.append(len(tempDf['label']) - 1)
     return labelsStartIndex, labelsEndIndex
 
-def add_trace_to_layout(fig_layout, df, col_name, row, col):
-    fig_layout.add_trace(go.Scatter(
-        x=df['datetime'], y=df[col_name],
-        mode='lines',
-        name=col_name), row=row, col=col)
-
-def update_label_lines(fig_layout, labelsStartIndex, labelsEndIndex, df, colorDict):
-    for i in range(len(labelsStartIndex)):
-        start_idx = labelsStartIndex[i]
-        end_idx = labelsEndIndex[i]
-        label = df['label'].iloc[start_idx]
-        fig_layout.add_trace(go.Scatter(
-            x=df.loc[start_idx:end_idx, 'datetime'],
-            y=[1] * (end_idx - start_idx + 1),
-            mode="lines",
-            name=label,
-            text=label,
-            line_color=colorDict.get(label, '#000000'),
-            textposition="top center",
-            line_width=5,
-            showlegend=False
-        ), row=1, col=1)
-
 def update_confidence_lines(fig_layout, labelsStartIndex, labelsEndIndex, df, confDict):
     for i in range(len(labelsStartIndex)):
         start_idx = labelsStartIndex[i]
@@ -103,67 +80,126 @@ def update_confidence_lines(fig_layout, labelsStartIndex, labelsEndIndex, df, co
         ), row=2, col=1)
 
 def plotGraph(df, cols, colorDict, confDict, labelsStartIndex=None, labelsEndIndex=None, selected_range=None, additional_shapes=[]):
-    if labelsStartIndex is None or labelsEndIndex is None:
-        labelsStartIndex, labelsEndIndex = calculate_label_indices(df)
-    
-    fig_layout = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.1, row_heights=[5, 5, 50], subplot_titles=("Label Line", "Confidence Line", "Raw Time-Series Data"))
-    
-    # Add traces
-    for col in cols:
-        add_trace_to_layout(fig_layout, df, col, 3, 1)
-    update_label_lines(fig_layout, labelsStartIndex, labelsEndIndex, df, colorDict)
-    update_confidence_lines(fig_layout, labelsStartIndex, labelsEndIndex, df, confDict)
-
-    # If there's a selected range, add shapes
-    if selected_range:
-        start_date, end_date = selected_range
-        fig_layout.add_shape(type='rect', xref='x', yref='paper', x0=start_date, x1=end_date, y0=0, y1=1, fillcolor='rgba(0, 0, 255, 0.2)', line={'width': 0})
-    
-    for shape in additional_shapes:
-        fig_layout.add_shape(shape)
-    
-    fig_layout.update_layout(
-        xaxis=dict(),
-        xaxis1_rangeslider_visible=False,
-        xaxis2_rangeslider_visible=False,
-        xaxis3_rangeslider_visible=True,
-        height=500,
-        legend_title_text="Sensors"
+    fig = go.Figure()
+    hovertemplate = (
+        "Datetime: %{x}<br>"
+        "Value: %{y}<br>"
+        "Label: %{customdata[0]}<br>"
+        "Confidence: %{customdata[1]}<extra></extra>"
     )
-    
-    return fig_layout
+    fig.update_layout(hovermode='x unified')
+    labelsStartIndex, labelsEndIndex = calculate_label_indices(df)
+
+    # Add each valid feature as a trace with hover information
+    for feature in valid_features:
+        fig.add_trace(
+            go.Scatter(
+                x=df["datetime"],
+                y=df[feature],
+                name=feature,
+                visible="legendonly" if feature not in cols else True,
+                customdata=df[['label', 'confidence']],
+                hovertemplate=hovertemplate
+            )
+        )
+
+    # Add rectangles for each label
+    for start_idx, end_idx in zip(labelsStartIndex, labelsEndIndex):
+        start_date, end_date = df['datetime'].iloc[start_idx], df['datetime'].iloc[end_idx]
+        label = df['label'].iloc[start_idx]
+        confidence = df['confidence'].iloc[start_idx]
+
+        # Choose color, defaulting to black if label not found in colorDict
+        color = colorDict.get(label, '#000000')
+
+        # Add a rectangle shape for each labeled interval
+        fig.add_shape(
+            type="rect",
+            x0=start_date, y0=0, x1=end_date, y1=1,
+            xref="x", yref="paper",
+            fillcolor=color, opacity=0.3, layer="below", line_width=0.5
+        )
+
+        if label != "Undefined":
+            midpoint_index = start_idx + (end_idx - start_idx) // 2
+            midpoint_date = df['datetime'].iloc[midpoint_index]
+            fig.add_annotation(
+                x=midpoint_date, y=1.0,  # Top of the plot area
+                text=f"{label}",
+                showarrow=False,
+                yref="paper",  # Use 'paper' reference for y to align with the top of the plot area
+                yanchor="top",  # Anchor the text at the top
+                font=dict(color='#000000'),
+                yshift=3  # Shift up by 5 units to keep the text inside the plot area
+            )
+
+    # Add dummy scatter traces for legend entries
+    unique_labels = df['label'].dropna().unique()
+    for label in unique_labels:
+        color = colorDict.get(label, '#000000')  # Get color from color dictionary
+        fig.add_trace(go.Scatter(
+            x=[None],  # No actual data points
+            y=[None],
+            mode='markers',
+            marker=dict(
+                color=color,
+                symbol='square',  # Use 'square' to represent the marker as a square
+                size=10,  # Adjust size to make it visible and appropriately sized in the legend
+                opacity=0.5
+            ),
+            name=label
+        ))
+
+    if additional_shapes:
+        for shape in additional_shapes:
+            fig.add_shape(shape)
+
+    # Update layout
+    fig.update_layout(
+        xaxis=dict(
+            title="Datetime",
+            rangeslider=dict(visible=True),
+            type="date"
+        ),
+        legend=dict(title=dict(text="Features")),
+        clickmode='event+select'
+    )
+
+    return fig
 
 def plotGraph_with_sync_point(df, cols, labelsStartIndex, labelsEndIndex, sync_time):
     # Reset and recreate the figure layout
-    fig_layout = make_subplots(
-        rows=3, cols=1,
-        shared_xaxes=True,
-        vertical_spacing=0.1,
-        row_heights=[5,5,50],
-        subplot_titles=("Label Line", "Confidence Line", "Raw Time-Series Data")
-    )
-
-    # Add time-series data and label/confidence lines
-    for col in cols:
-        add_trace_to_layout(fig_layout, df, col, 3, 1)
-    update_label_lines(fig_layout, labelsStartIndex, labelsEndIndex, df, colorDict)
-    update_confidence_lines(fig_layout, labelsStartIndex, labelsEndIndex, df, confDict)
+    fig = plotGraph(df, cols, colorDict, confDict, labelsStartIndex, labelsEndIndex)
 
     # Add sync line
-    fig_layout.add_vline(x=sync_time, line_width=2, line_dash="dash", line_color="red")
-    fig_layout.add_annotation(x=sync_time, y=0.5, text="Video Sync", showarrow=False, yshift=10)
-
-    # Update layout settings
-    fig_layout.update_layout(
-        xaxis=dict(),
-        xaxis1_rangeslider_visible=False,
-        xaxis2_rangeslider_visible=False,
-        xaxis3_rangeslider_visible=True,
-        height=500,
-        legend_title_text="Sensors"
+    fig.add_vline(x=sync_time, line_width=2, line_dash="dash", line_color="red")
+    # Add annotation for video sync above the graph
+    fig.add_annotation(
+        x=sync_time, 
+        y=1.15,
+        yshift=2,
+        text="Video Sync",
+        showarrow=False, 
+        xref="x", 
+        yref="paper",  # Use "paper" to refer to the entire height of the layout
+        textangle=0,  # Optional: Rotate text if needed
+        font=dict(
+            family="Arial, sans-serif",
+            size=14,
+            color="black"
+        ),
     )
 
-    return fig_layout
+    # Update layout settings
+    fig.update_layout(
+        legend_title_text="Features",
+        xaxis=dict(
+            rangeslider_visible=True,  # Optionally show the range slider
+            type='date'
+        ),
+    )
+
+    return fig
 
 def update_dataframe(df, start, end, label, confidence):
     # Ensure the 'datetime' column is in datetime format
@@ -189,53 +225,48 @@ def update_dataframe(df, start, end, label, confidence):
 
 # Function to create the layout and also define callbacks dynamically
 def build_layout(df, labelList, valid_features, features_to_omit, cols, video_path, colorDict, confDict):
-    manual_label_UI_fields = dbc.Card([
-        html.H4("User Input Fields for Manually Adding a Label:"),
-        html.Div("Format as YYYY-MM-DD HH:MM:SS E.g (2021-10-08 16:50:21)"),
-        html.Br(),
-        html.Div([
-            dcc.Checklist(
-                id='fill-ui-checkbox',
-                options=[{'label': 'Fill UI with selected range', 'value': 'fill-ui'}],
-                value=[]
-            ),
-            html.Div(["Start Time: ", dcc.Input(id='start-input', type='text', placeholder="YYYY-MM-DD HH:MM:SS"), html.Div(id='start-output')]),
-            html.Br(),
-            html.Div(["End Time: ", dcc.Input(id='end-input', type='text', placeholder="YYYY-MM-DD HH:MM:SS"), html.Div(id='end-output')]),
-            html.Br(),
-            html.Div(["Labels: ", dcc.Dropdown(labelList, placeholder='Select a Label', id='label-selection'), html.Div(id='label-output')]),
-            html.Br(),
-            html.Div(["Degree of Confidence: ", dcc.Dropdown(["High", "Medium", "Low", "Undefined"], placeholder='Select a Confidence Level', id='confidence-selection'), html.Div(id='confidence-output')]),
-            html.Br(),
-            html.Button('Update Graph', id='btn-manual-label', n_clicks=0),
-            html.Br(),
-            html.Button('Save as CSV', id='btn-save-csv', n_clicks=0),
-            html.Div(id='csv-save-output'),
-        ])
-    ])
+    manual_label_UI_fields = dbc.Card(
+        [
+            dbc.CardHeader(html.H4("User Input Fields for Manually Adding a Label")),
+            dbc.CardBody([
+                html.P("Enter the time range for labeling in the format: YYYY-MM-DD HH:MM:SS (e.g., 2021-10-08 16:50:21)"),
+                dcc.Checklist(
+                    id='fill-ui-checkbox',
+                    options=[{'label': 'Fill UI with selected range', 'value': 'fill-ui'}],
+                    value=[]
+                ),
+                html.Div(["Start Time: ", dcc.Input(id='start-input', type='text', placeholder="YYYY-MM-DD HH:MM:SS"), html.Div(id='start-output')]),
+                html.Br(),
+                html.Div(["End Time: ", dcc.Input(id='end-input', type='text', placeholder="YYYY-MM-DD HH:MM:SS"), html.Div(id='end-output')]),
+                html.Br(),
+                html.Div(["Labels: ", dcc.Dropdown(labelList, placeholder='Select a Label', id='label-selection'), html.Div(id='label-output')]),
+                html.Br(),
+                html.Div(["Degree of Confidence: ", dcc.Dropdown(["High", "Medium", "Low", "Undefined"], placeholder='Select a Confidence Level', id='confidence-selection'), html.Div(id='confidence-output')]),
+                html.Br(),
+                dbc.Button('Update Graph', id='btn-manual-label', n_clicks=0, color="primary", className="me-2"),
+            ])
+        ],
+        className="mb-3"
+    )
 
-    video_UI_fields = dbc.Card([
-        html.H4("Set Data/Video Offset:"),
-        html.Div([
-            html.Strong("Zero Offset:"), html.Span(" Sync Start - Video and data begin together."),
-            html.Br(),
-            html.Strong("Positive Offset:"), html.Span(" Video Delay - Start video [offset] seconds after data."),
-            html.Br(),
-            html.Strong("Negative Offset:"), html.Span(" Data Delay - Start data [offset] seconds after video."),
-            html.Br(),
-            dcc.Input(id='video-offset-input', type='text', placeholder="Input in Seconds", value="0"),
-            html.Div(id='vid-offset-output'),
-            html.Br(),
-            html.H4("Sync Video to Data:"), html.Div("Plot line on data graph at current time in video."),
-            html.Button("Sync", id="button-sync-vid", n_clicks=0),
-            html.Br(),
-            html.H4("Seek to Time in Video:"), html.Div("E.g. If you want to go to 2 minute time stamp in video, input in seconds, or '120'"),
-            dcc.Input(id='seek-input', type='text', placeholder="Input in Seconds"),
-            html.Button("Seek", id="button-seek-to"),
-            html.Div(id="div-current-time"),
-            html.Div(html.Button('Reset Inputs', id='reset-button-2')),
-        ])
-    ])
+
+    video_UI_fields = dbc.Card(
+        [
+            dbc.CardHeader(html.H4("Video and Data Synchronization")),
+            dbc.CardBody([
+                html.P("Align the video playback with corresponding data points on the graph for accurate labeling."),
+                dbc.Button("Sync Video to Data", id="button-sync-vid", n_clicks=0, color="primary", className="mb-2"),
+                dbc.Tooltip("Click to plot a line on the data graph that corresponds to the current time in the video.",
+                            target="button-sync-vid"),
+                html.Div(id="div-current-time"),
+                dbc.Button("Save Manually Labeled Data as CSV", id='btn-save-csv', n_clicks=0, color="success", className="mt-3"),
+                dbc.Tooltip("Save your labeled data. Use this after you have finished syncing and labeling.",
+                            target="btn-save-csv", placement="bottom"),
+                html.Div(id='csv-save-output', className="mt-2")
+            ])
+        ],
+        className="mb-3"
+    )
 
     layout = dbc.Container([
         html.H2("Manually Label Raw Time-Series Data"),
@@ -321,15 +352,6 @@ def save_csv(n_clicks, jsonified_df):
         return 'Data saved as CSV'
     return ''
 
-# callback for user input video offset
-@callback(
-    Output("vid-offset-output", "children"),
-    Input('video-offset-input', "value")
-)
-def update_video_offset(videoOffset):
-    update_video_offset.data = videoOffset
-    return "Offset Value: {}".format(videoOffset)
-
 # callback for printing current time under video
 @callback(
     Output("div-current-time", "children"),
@@ -358,28 +380,11 @@ def calculate_sync_point(df, offset, timestamp):
 
     # Convert sync_time to a datetime object and format it
     formatted_sync_time = pd.to_datetime(sync_time).strftime('%Y-%m-%d %H:%M:%S')
-
+    
+    # Drop the 'timedelta' column from the DataFrame
+    df.drop(columns='timedelta', inplace=True)
+        
     return formatted_sync_time
-
-# callback for seeking to timestamp in video from user inputted value
-@callback(
-    Output("video-player", "seekTo"), 
-    [Input("button-seek-to", "n_clicks"),
-    Input('seek-input', 'value')]
-)
-def set_seekTo(n_clicks, seek_value):
-    if 'button-seek-to' == ctx.triggered_id:
-        return seek_value
-
-# callback for resetting video UI
-@callback(
-    [Output('video-offset-input', 'value'),Output('seek-input', 'value')],
-    [Input('reset-button-2', 'n_clicks')])
-def reset_input(n_clicks):
-    if n_clicks:
-        return '0','0'
-    else:
-        return '0','0'
 
 @callback(
     Output('start-input', 'value'),
@@ -433,7 +438,6 @@ def combined_callback(btn_manual_label, btn_sync_vid, relayoutData, jsonified_df
             return updated_figure, df.to_json(date_format='iso', orient='split')  # Return updated DataFrame in JSON format
 
     elif trigger_id == 'button-sync-vid':
-        offset = int(update_video_offset.data)
         timestamp = int(update_time.data)
         vid_to_data_sync = calculate_sync_point(df, offset, timestamp)
         updated_figure = plotGraph_with_sync_point(df, cols, labelsStartIndex, labelsEndIndex, vid_to_data_sync)
