@@ -57,3 +57,40 @@ This will start the Dash application using the settings and libraries specified 
 - **Data Integration**: Post-correction, integrate the refined labels back into the model to improve its predictions.
 - **Export**: Export the correctly labeled data for further use or analysis.
 
+### Repository Structure
+
+This repository is structured to support the functionality of the Assisted Labeling Visualizer (ALVI), a semi-automatic labeling system for time-series data. Below is an outline of the key components and their roles:
+
+```
+.
+├── apps                           # All individual Dash apps that give functionality to the application
+│   ├── preprocessing.py           # Handles the uploading and initial processing of time-series data
+│   ├── manual_labeling.py         # Provides the interface for manual data labeling using interactive graphs
+│   ├── model_training.py          # Manages training of new models or utilization of pre-trained models
+│   ├── prediction.py              # Facilitates the prediction process using trained models
+│   └── correct_autolabels.py      # Enables review and correction of labels suggested by the automatic labeling process
+│
+├── assets                         # Stores videos temporarily for rendering in Dash app, deleted after labeling
+│
+├── data                           # Prepopulated with datasets tested on the application
+│   ├── TWristAR                   # HAR dataset with structured and unstructured activities, includes full video records
+│   └── CMU-MMAC                   # Multimodal dataset from various kitchen activities, supports complex environment testing
+│
+├── data_loaders                   # Helper scripts to load datasets
+│
+├── documentation                  # Comprehensive documentation of the app and its development
+│
+├── labeled_data                   # Default directory for saving labeled data, can be set to another directory by user
+│
+├── prediction                     # Stores models, model dimensions, and classification details used in training and prediction
+│
+├── storage                        # Temporary live storage used during application operation, cleared after closing the app
+│
+├── app.py                         # Initializes the Dash app, sets up server and configurations
+│
+└── index.py                       # Manages routing and interaction of different app pages, implements core app logic
+```
+
+## Key Files Explained
+- **apps directory**: Contains the individual Dash applications that provide the core functionality of our app in different pages.
+- **index.py**: This is the main entry point of the Dash application. It sets up the web server, defines the navigation between different pages of the app, and manages user access to these pages based on configuration settings.
