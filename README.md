@@ -94,3 +94,8 @@ This repository is structured to support the functionality of the Assisted Label
 ## Key Files Explained
 - **apps directory**: Contains the individual Dash applications that provide the core functionality of our app in different pages.
 - **index.py**: This is the main entry point of the Dash application. It sets up the web server, defines the navigation between different pages of the app, and manages user access to these pages based on configuration settings.
+
+## Video Walkthrough
+[https://youtu.be/rYPZxyt82KI](https://youtu.be/rYPZxyt82KI)
+
+[![Video thumbnail](https://img.youtube.com/vi/rYPZxyt82KI/0.jpg)](https://www.youtube.com/watch?v=rYPZxyt82KI)
