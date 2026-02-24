@@ -99,3 +99,18 @@ This repository is structured to support the functionality of the Assisted Label
 [https://youtu.be/rYPZxyt82KI](https://youtu.be/rYPZxyt82KI)
 
 [![Video thumbnail](https://img.youtube.com/vi/rYPZxyt82KI/0.jpg)](https://www.youtube.com/watch?v=rYPZxyt82KI)
+
+## Citation
+
+If you find **ALVI** useful for your research, please consider citing this paper using the following information:
+
+```bibtex
+@inproceedings{hinkle2023assisted,
+  title={Assisted labeling visualizer (ALVI): a semi-automatic labeling system for time-series data},
+  author={Hinkle, Lee B and Rech, Tristan Alexander and Lynn, Tyler and Atkinson, Gentry and Metsis, Vangelis},
+  booktitle={2023 IEEE International Conference on Acoustics, Speech, and Signal Processing Workshops (ICASSPW)},
+  pages={1--5},
+  year={2023},
+  organization={IEEE}
+}
+```
